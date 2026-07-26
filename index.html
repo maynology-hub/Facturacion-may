@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1124,7 +1125,7 @@ function renderClientes(){
             const deuda = deudaClienteUSD(c.nombre);
             return `<tr><td><b>${c.nombre}</b></td><td>${c.telefono||'—'}</td><td>${fmtUSD(totalCompradoClienteUSD(c.nombre))}</td>
             <td>${deuda>0? `<span class="badge rojo">${fmtUSD(deuda)}</span>` : '—'}</td>
-            <td class="row-actions"><button onclick="prepararEdicionCliente(${c.id})">&#9998;</button><button class="del" onclick="eliminarCliente(${c.id})">&#128465;</button></td></tr>`;
+            <td class="row-actions">${c.telefono? `<button title="WhatsApp" onclick="contactarClienteWhatsApp('${c.nombre.replace(/'/g,"\\'")}')">&#128241;</button>`:''}<button onclick="prepararEdicionCliente(${c.id})">&#9998;</button><button class="del" onclick="eliminarCliente(${c.id})">&#128465;</button></td></tr>`;
           }).join('') : `<tr><td colspan="5" class="empty">Aún no tienes clientes registrados. Se crean automáticamente al facturar, o agrégalos aquí.</td></tr>`}
         </tbody>
       </table></div>
@@ -1163,6 +1164,41 @@ function eliminarCliente(id){
     state.clientes = state.clientes.filter(c=>c.id!==id);
     saveState(); render();
   }
+}
+
+// WHATSAPP
+// Normaliza un teléfono venezolano a formato internacional para wa.me (ej: 0414-1234567 -> 584141234567)
+function telefonoWhatsApp(tel){
+  let d = (tel||'').replace(/\D/g,'');
+  if(!d) return '';
+  if(d.startsWith('0')) d = '58'+d.slice(1);
+  else if(!d.startsWith('58') && d.length===10) d = '58'+d;
+  return d;
+}
+function abrirWhatsApp(nombreCliente, mensaje){
+  const c = buscarClientePorNombre(nombreCliente);
+  if(!c || !c.telefono){
+    alert(`"${nombreCliente}" no tiene teléfono registrado.\nAgrégalo desde la sección Clientes para poder escribirle por WhatsApp.`);
+    return;
+  }
+  const numero = telefonoWhatsApp(c.telefono);
+  if(numero.length<11){ alert('El número de teléfono guardado no parece válido: '+c.telefono); return; }
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(mensaje), '_blank');
+}
+function contactarClienteWhatsApp(nombreCliente){
+  abrirWhatsApp(nombreCliente, `Hola ${nombreCliente}, te escribimos desde ${state.negocioNombre}. ¿Cómo estás?`);
+}
+// Arma el mensaje de recordatorio con el desglose exacto de lo que debe (mismo dato que ve el negocio)
+function recordarDeudaWhatsApp(nombreCliente){
+  const facturas = facturasPendientesCliente(nombreCliente);
+  if(!facturas.length){ alert('Este cliente no tiene deudas pendientes.'); return; }
+  const total = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+  const detalle = facturas.map(f=>{
+    const saldo = saldoFactura(f);
+    return `- ${f.fecha}: $${saldo.toFixed(2)} (${fmtBs(saldo*state.tasaActual)})`;
+  }).join('\n');
+  const msg = `Hola ${nombreCliente}, te recordamos tu saldo pendiente en ${state.negocioNombre}:\n${detalle}\nTotal adeudado: $${total.toFixed(2)} (${fmtBs(total*state.tasaActual)}) — Tasa del día: ${state.tasaActual.toFixed(2)} Bs/$. ¡Gracias!`;
+  abrirWhatsApp(nombreCliente, msg);
 }
 
 function filtrarClientesCombo(){
@@ -1228,6 +1264,7 @@ function renderDeudores(){
       <td><b>${fmtUSD(g.totalUSD)}</b></td><td style="color:var(--rojo-txt);"><b>${fmtBs(g.totalUSD*state.tasaActual)}</b></td>
       <td class="row-actions">
         <button class="btn btn-outline btn-sm" onclick="abrirGestionDeudaCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128203; Gestionar</button>
+        <button class="btn btn-outline btn-sm" onclick="recordarDeudaWhatsApp('${g.cliente.replace(/'/g,"\\'")}')" title="Recordar por WhatsApp">&#128241;</button>
         <button class="btn btn-success btn-sm" onclick="cobrarTodoCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128176; Cobrar Todo</button>
       </td></tr>`;
     }).join('') : `<tr><td colspan="6" class="empty">No hay deudas pendientes.</td></tr>`}
