@@ -67,6 +67,14 @@ main{flex:1;padding:22px 30px 60px;max-width:1360px;}
 .topbar .grp label{font-weight:700;white-space:nowrap;}
 .topbar input{padding:7px 10px;border:1px solid var(--borde);border-radius:10px;font-size:13px;background:var(--rosa-claro);font-family:var(--font);}
 .topbar input#tasaDolar{width:110px;text-align:right;font-weight:700;color:var(--verde-osc);}
+.nube-grp{background:var(--rosa-claro);padding:6px 12px;border-radius:10px;cursor:default;}
+.nube-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#9aa0a6;flex-shrink:0;}
+.nube-dot.conectado{background:#2FA35C;box-shadow:0 0 0 3px rgba(47,163,92,.18);}
+.nube-dot.local{background:#B0B0B0;}
+.nube-dot.error{background:#D9534F;box-shadow:0 0 0 3px rgba(217,83,79,.18);}
+.nube-dot.verificando{background:#E0A83E;animation:parpadeo 1.2s infinite;}
+@keyframes parpadeo{0%,100%{opacity:1;}50%{opacity:.35;}}
+.nube-txt{font-weight:700;font-size:11.5px;}
 .topbar input#filtroFecha{width:150px;}
 .topbar input#filtroMes{width:140px;}
 
@@ -99,6 +107,7 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .badge.rojo{background:var(--rojo-bg);color:var(--rojo-txt);}
 .badge.amar{background:var(--amar-bg);color:var(--amar-txt);}
 .badge.verde{background:var(--verde-bg);color:var(--verde-txt);}
+.badge.azul{background:#DCEAFE;color:#2A5DAD;}
 
 .row-actions{white-space:nowrap;}
 .row-actions button{border:none;background:none;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:8px;}
@@ -183,17 +192,44 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .pos-side .doc{font-size:11px;color:#CFE9D6;letter-spacing:.5px;margin-bottom:14px;}
 .pos-side .doc b{color:#fff;font-family:var(--font-title);font-size:14px;}
 .pos-side .total-lbl{font-size:11px;color:#CFE9D6;letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;}
-.pos-side .total-usd{font-family:var(--font-title);font-size:34px;font-weight:700;color:#fff;background:rgba(0,0,0,.18);border-radius:14px;padding:16px 14px;text-align:center;margin-bottom:12px;}
-.pos-side .total-bs{background:rgba(255,255,255,.14);border-radius:12px;padding:10px 14px;text-align:center;font-size:15px;font-weight:700;margin-bottom:16px;}
+.pos-side .total-bs{font-family:var(--font-title);font-size:34px;font-weight:700;color:#fff;background:rgba(0,0,0,.18);border-radius:14px;padding:16px 14px;text-align:center;margin-bottom:12px;}
+.pos-side .total-usd{background:rgba(255,255,255,.14);border-radius:12px;padding:10px 14px;text-align:center;font-size:15px;font-weight:700;margin-bottom:16px;}
 .pos-side .mini-row{display:flex;justify-content:space-between;font-size:12px;color:#DCEFE0;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.12);}
 .pos-side select,.pos-side .field select{background:rgba(255,255,255,.92);}
 .pos-side .field label{color:#DCEFE0;}
 .pos-side .btn-block{margin-top:8px;}
+
+/* ---------- RESPONSIVE / MÓVIL ---------- */
+.hamburger{display:none;position:fixed;top:14px;left:14px;z-index:70;background:var(--verde-osc);color:#fff;
+  border:none;border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.2);}
+.sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:59;}
+@media (max-width:860px){
+  .hamburger{display:block;}
+  #app{display:block;}
+  .sidebar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .2s ease;width:230px;}
+  .sidebar.abierto{transform:translateX(0);}
+  .sidebar-scrim.show{display:block;}
+  main{padding:64px 14px 50px;max-width:100%;}
+  .topbar{padding:12px 14px;gap:10px;}
+  .topbar .grp{width:100%;justify-content:space-between;}
+  .topbar input#tasaDolar,.topbar input#filtroFecha,.topbar input#filtroMes{width:auto;flex:1;}
+  .pagehead h1{font-size:19px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .card{padding:16px;}
+  .pos-entry{grid-template-columns:1fr 1fr;}
+  .pos-entry .addbtn{grid-column:1/-1;}
+  table{font-size:11.8px;}
+}
+@media (max-width:420px){
+  .kpi-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
+<button class="hamburger" id="btnHamburger" onclick="toggleMenuMovil()">&#9776;</button>
+<div class="sidebar-scrim" id="sidebarScrim" onclick="cerrarMenuMovil()"></div>
 <div id="app">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebarMain">
     <div class="brand">
       <div class="name" id="brandName">&#127807; Sistema Comercial</div>
       <div class="tag" id="brandTag">Facturación &amp; Deudores</div>
@@ -230,8 +266,14 @@ function seedState(){
     catalogo: productosBaseOriginales.map((nombre,i)=>({id:i+1, nombre, precioUSD:1.00})),
     facturas: [],
     egresos: [],
+    clientes: [],
+    contadorFactura: 1,
+    historialTasas: [],
+    backups: [],
     filtroFecha: hoy,
     filtroMes: '',
+    filtroTextoHistorial: '',
+    filtroEstadoHistorial: '',
     currentView: 'dashboard',
     negocioIcono: '🍃',
     negocioNombre: 'Sistema Comercial',
@@ -246,15 +288,56 @@ function loadState(){
     const guardado = localStorage.getItem(STORAGE_KEY);
     if(guardado){ state = Object.assign(seedState(), JSON.parse(guardado)); }
   }catch(e){ console.error('No se pudo leer el almacenamiento local', e); }
+  asegurarContadorFactura();
   render();
   intentarReconectarArchivoUSB();
 }
 
+// Garantiza que el contador de facturas nunca quede por debajo de lo ya emitido
+// (importante para datos guardados antes de esta función existir).
+function asegurarContadorFactura(){
+  let maxNum = 0;
+  (state.facturas||[]).forEach(f=>{
+    const m = /FAC-(\d+)/.exec(f.numeroFactura||'');
+    if(m) maxNum = Math.max(maxNum, parseInt(m[1],10));
+  });
+  if(!state.contadorFactura || state.contadorFactura <= maxNum){
+    state.contadorFactura = maxNum + 1;
+  }
+}
+
+function registrarRespaldoAutomatico(){
+  if(!state.backups) state.backups = [];
+  const hoy = hoyStr();
+  const yaHoy = state.backups.find(b=>b.fecha===hoy);
+  const snapshot = JSON.stringify(Object.assign({}, state, {backups: undefined}));
+  if(yaHoy){
+    yaHoy.data = snapshot; // sobrescribe el respaldo del día con la versión más reciente
+  } else {
+    state.backups.push({fecha: hoy, hora: new Date().toLocaleTimeString('es-VE'), data: snapshot});
+    if(state.backups.length > 7) state.backups.shift(); // conserva los últimos 7 días
+  }
+}
+
 function saveState(){
+  registrarRespaldoAutomatico();
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.error('No se pudo guardar en localStorage', e); }
   if(window.guardarEnNube){ window.guardarEnNube(state); }
   if(dataFileHandle){ guardarEnArchivoUSB(); }
+}
+
+function restaurarRespaldo(fecha){
+  const b = (state.backups||[]).find(x=>x.fecha===fecha);
+  if(!b) return;
+  if(!confirm(`¿Restaurar los datos del ${fecha}? Esto reemplazará TODO lo que tengas ahora mismo.`)) return;
+  const backupsActuales = state.backups;
+  const datosRestaurados = JSON.parse(b.data);
+  state = Object.assign(seedState(), datosRestaurados);
+  state.backups = backupsActuales;
+  asegurarContadorFactura();
+  saveState(); render();
+  alert('Respaldo restaurado.');
 }
 
 // MODO PORTÁTIL USB
@@ -378,8 +461,12 @@ function diasDesde(fecha){
   return diff>=0 ? diff : 0;
 }
 function badgeEstado(e){
-  const map = {Cancelado:'verde', Pendiente:'amar'};
+  const map = {Cancelado:'verde', Pendiente:'amar', Abonado:'azul'};
   return `<span class="badge ${map[e]||'amar'}">${e}</span>`;
+}
+// Cuánto falta por pagar de una factura, considerando abonos parciales ya registrados
+function saldoFactura(f){
+  return Math.max(0, (f.totalUSD||0) - (f.montoAbonadoUSD||0));
 }
 
 // NAVEGACIÓN
@@ -388,6 +475,7 @@ const NAV = [
   {id:'reportes', label:'Ganancias', icon:'&#128200;'},
   {id:'factura', label:'Nueva Factura', icon:'&#128722;'},
   {id:'historial', label:'Historial de Ventas', icon:'&#128337;'},
+  {id:'clientes', label:'Clientes', icon:'&#128100;'},
   {id:'deudores', label:'Cuentas por Cobrar', icon:'&#9888;'},
   {id:'egresos', label:'Egresos', icon:'&#128181;'},
   {id:'catalogo', label:'Catálogo de Precios', icon:'&#9881;'},
@@ -398,11 +486,22 @@ function renderNav(){
     `<button class="navbtn ${state.currentView===n.id?'active':''}" onclick="goTo('${n.id}')"><span class="icon">${n.icon}</span>${n.label}</button>`
   ).join('');
 }
-function goTo(id){ state.currentView=id; render(); }
+function goTo(id){ state.currentView=id; render(); cerrarMenuMovil(); }
+function toggleMenuMovil(){
+  document.getElementById('sidebarMain').classList.toggle('abierto');
+  document.getElementById('sidebarScrim').classList.toggle('show');
+}
+function cerrarMenuMovil(){
+  document.getElementById('sidebarMain').classList.remove('abierto');
+  document.getElementById('sidebarScrim').classList.remove('show');
+}
 
 function topbarHTML(){
   return `
   <div class="topbar">
+    <div class="grp nube-grp" id="nubeIndicadorWrap" title="${textoEstadoNube(estadoNube)}">
+      <span class="nube-dot ${estadoNube}"></span><span class="nube-txt">${textoEstadoNube(estadoNube)}</span>
+    </div>
     <div class="grp"><label><i>&#128176;</i> Tasa del Día (Bs/$):</label>
       <input type="number" step="0.01" id="tasaDolar" value="${state.tasaActual.toFixed(2)}" onchange="actualizarTasa()"></div>
     <div class="grp"><label>Fecha de Consulta:</label>
@@ -413,8 +512,28 @@ function topbarHTML(){
       <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosFechas()">Ver Todo</button></div>
   </div>`;
 }
+// Estado de la sincronización con la nube: 'verificando' | 'conectado' | 'local' | 'error'
+let estadoNube = 'verificando';
+function textoEstadoNube(v){
+  return { verificando:'Verificando nube...', conectado:'Conectado a la nube', local:'Solo local (sin nube)', error:'Error de nube — usando local' }[v] || 'Solo local';
+}
+window.setEstadoNube = function(v){
+  estadoNube = v;
+  const wrap = document.getElementById('nubeIndicadorWrap');
+  if(wrap){
+    wrap.title = textoEstadoNube(v);
+    wrap.querySelector('.nube-dot').className = 'nube-dot '+v;
+    wrap.querySelector('.nube-txt').textContent = textoEstadoNube(v);
+  }
+};
 function actualizarTasa(){
-  state.tasaActual = parseFloat(document.getElementById('tasaDolar').value) || 0;
+  const nueva = parseFloat(document.getElementById('tasaDolar').value) || 0;
+  if(nueva !== state.tasaActual){
+    if(!state.historialTasas) state.historialTasas = [];
+    state.historialTasas.push({fecha: hoyStr(), hora: new Date().toLocaleTimeString('es-VE'), tasa: nueva});
+    if(state.historialTasas.length > 200) state.historialTasas.shift();
+  }
+  state.tasaActual = nueva;
   saveState(); render();
 }
 function establecerFechaHoy(){ state.filtroFecha = hoyStr(); state.filtroMes=''; saveState(); render(); }
@@ -449,7 +568,7 @@ function render(){
   const c = document.getElementById('content');
   const views = {
     dashboard: renderDashboard, reportes: renderReportes, factura: renderFactura, historial: renderHistorial,
-    deudores: renderDeudores, egresos: renderEgresos, catalogo: renderCatalogo, configuracion: renderConfiguracion,
+    clientes: renderClientes, deudores: renderDeudores, egresos: renderEgresos, catalogo: renderCatalogo, configuracion: renderConfiguracion,
   };
   c.innerHTML = topbarHTML() + (views[state.currentView]||renderDashboard)();
   if(state.currentView==='factura'){ renderCarritoTabla(); renderTotalesFactura(); }
@@ -470,8 +589,8 @@ function calcularEstadisticas(){
   const cobradas = fF.filter(f=>f.estado==='Cancelado');
   const totalCobradoUSD = cobradas.reduce((s,f)=>s+f.totalUSD,0);
   const totalCobradoBS = cobradas.reduce((s,f)=>s+f.totalBS,0);
-  const pendientes = state.facturas.filter(f=>f.estado==='Pendiente');
-  const totalPendienteUSD = pendientes.reduce((s,f)=>s+f.totalUSD,0);
+  const pendientes = state.facturas.filter(f=>f.estado==='Pendiente'||f.estado==='Abonado');
+  const totalPendienteUSD = pendientes.reduce((s,f)=>s+saldoFactura(f),0);
   const totalPendienteBS = totalPendienteUSD * state.tasaActual;
   const totalEgresosUSD = eF.reduce((s,e)=>s+e.montoUSD,0);
   const totalEgresosBS = eF.reduce((s,e)=>s+e.montoBS,0);
@@ -571,27 +690,31 @@ let facturaClienteTmp = '';
 function renderFactura(){
   const totalUSD = carritoActual.reduce((s,it)=>s+it.subtotalUSD,0);
   const cantItems = carritoActual.reduce((s,it)=>s+Number(it.cantidad),0);
-  const docNum = 'FAC-'+String(state.facturas.length+1).padStart(4,'0');
+  const docNum = 'FAC-'+String(state.contadorFactura).padStart(4,'0');
   return `
   <div class="pagehead"><div><h1>&#127807; Nueva Factura</h1></div></div>
   <div class="pos-wrap">
     <div class="pos-main">
-      <div class="pos-cliente">
+      <div class="pos-cliente autocomplete-wrap" style="flex:1;">
         <label>&#128100; Cliente:</label>
-        <input type="text" id="vCliente" placeholder="Nombre..." value="${facturaClienteTmp}" oninput="facturaClienteTmp=this.value">
+        <input type="text" id="vCliente" placeholder="Nombre... (Enter para ir al producto)" value="${facturaClienteTmp}" autocomplete="off"
+          oninput="facturaClienteTmp=this.value; filtrarClientesCombo();" onfocus="filtrarClientesCombo();" onblur="setTimeout(ocultarListaClientes,150)"
+          onkeydown="if(event.key==='Enter'){ event.preventDefault(); ocultarListaClientes(); document.getElementById('vProductoInput').focus(); }">
+        <div class="autocomplete-list" id="vClienteLista" style="display:none;"></div>
       </div>
       <div class="pos-entry">
         <div class="field autocomplete-wrap"><label>Producto / Servicio</label>
-          <input type="text" id="vProductoInput" placeholder="Seleccionar..." autocomplete="off"
-            oninput="filtrarProductosCombo('v')" onfocus="filtrarProductosCombo('v')" onblur="setTimeout(()=>ocultarListaCombo('v'),150)">
+          <input type="text" id="vProductoInput" placeholder="Seleccionar... (Enter = tomar 1ra opción)" autocomplete="off"
+            oninput="filtrarProductosCombo('v')" onfocus="filtrarProductosCombo('v')" onblur="setTimeout(()=>ocultarListaCombo('v'),150)"
+            onkeydown="manejarEnterProducto(event)">
           <input type="hidden" id="vProductoIdSel" value="">
           <div class="autocomplete-list" id="vProductoLista" style="display:none;"></div>
         </div>
-        <div class="field"><label>Precio ($)</label><input type="number" step="0.0001" id="vPrecioUnitarioUSD" placeholder="0.00" oninput="calcularSubtotalItem()"></div>
-        <div class="field"><label>Cantidad</label><input type="number" id="vCantidad" value="1" min="1" oninput="calcularSubtotalItem()"></div>
+        <div class="field"><label>Precio ($)</label><input type="number" step="0.0001" id="vPrecioUnitarioUSD" placeholder="0.00" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vCantidad').focus();document.getElementById('vCantidad').select();}"></div>
+        <div class="field"><label>Cantidad</label><input type="number" id="vCantidad" value="1" min="1" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemAlCarrito();}"></div>
         <button class="addbtn" onclick="agregarItemAlCarrito()">+ Añadir</button>
       </div>
-      <div style="font-size:11.5px;color:var(--gris);margin:-6px 0 12px 4px;">Subtotal: <b id="lblSubtotalItemUSD">0.00</b> $ &nbsp;(<span id="lblSubtotalItemBS">0.00</span> Bs)</div>
+      <div style="font-size:11.5px;color:var(--gris);margin:-6px 0 12px 4px;">Subtotal: <b id="lblSubtotalItemBS">0.00</b> Bs &nbsp;(<span id="lblSubtotalItemUSD">0.00</span> $)</div>
 
       <div class="table-wrap pos-items" style="max-height:340px;"><table>
         <thead><tr><th>Descripción</th><th>Precio Unit.</th><th>Cant.</th><th>Subtotal ($)</th><th>Subtotal (Bs)</th><th></th></tr></thead>
@@ -605,8 +728,8 @@ function renderFactura(){
     <div class="pos-side">
       <div class="doc">DOC. N° <b>${docNum}</b><br>${fmtDatePretty(state.filtroFecha || hoyStr())}</div>
       <div class="total-lbl">Total a Cobrar</div>
-      <div class="total-usd" id="lblTotalFacturaUSD">${fmtUSD(totalUSD)}</div>
       <div class="total-bs" id="lblTotalFacturaBS">${fmtBs(totalUSD*state.tasaActual)}</div>
+      <div class="total-usd" id="lblTotalFacturaUSD">${fmtUSD(totalUSD)}</div>
       <div class="mini-row"><span>Tasa</span><span>${state.tasaActual.toFixed(2)} Bs/$</span></div>
       <div class="mini-row" style="border-bottom:none;"><span>Items</span><span id="lblTotalCantItems">${cantItems}</span></div>
 
@@ -614,7 +737,10 @@ function renderFactura(){
         <select id="vEstadoPago" onchange="toggleObsPendiente()">
           <option value="Cancelado">&#9989; Cancelado</option>
           <option value="Pendiente">&#9203; Pendiente</option>
+          <option value="Abonado">&#128176; Abonado (pago parcial)</option>
         </select></div>
+      <div class="field" id="montoAbonadoWrap" style="display:none;"><label>Monto abonado ahora ($)</label>
+        <input type="number" step="0.01" id="vMontoAbonado" placeholder="0.00" max="${totalUSD}"></div>
       <div class="field" id="obsPendienteWrap" style="display:none;"><label>Observación</label>
         <textarea id="vObservacion" rows="2" style="background:rgba(255,255,255,.92);"></textarea></div>
 
@@ -624,8 +750,11 @@ function renderFactura(){
   `;
 }
 function toggleObsPendiente(){
+  const estado = document.getElementById('vEstadoPago').value;
   const w = document.getElementById('obsPendienteWrap');
-  if(w) w.style.display = document.getElementById('vEstadoPago').value==='Pendiente' ? 'block' : 'none';
+  const m = document.getElementById('montoAbonadoWrap');
+  if(w) w.style.display = (estado==='Pendiente' || estado==='Abonado') ? 'block' : 'none';
+  if(m) m.style.display = estado==='Abonado' ? 'block' : 'none';
 }
 function filtrarProductosCombo(prefix){
   const input = document.getElementById(prefix+'ProductoInput');
@@ -634,10 +763,22 @@ function filtrarProductosCombo(prefix){
   const q = input.value.trim().toLowerCase();
   const matches = q ? state.catalogo.filter(p=>p.nombre.toLowerCase().includes(q)) : state.catalogo;
   lista.innerHTML = matches.length ? matches.slice(0,60).map(p=>`
-    <div class="autocomplete-item" onmousedown="seleccionarProductoCombo('${prefix}',${p.id})">${p.nombre} <span style="color:var(--gris);float:right;">$${p.precioUSD.toFixed(2)}</span></div>
+    <div class="autocomplete-item" onmousedown="seleccionarProductoCombo('${prefix}',${p.id})">${p.nombre} <span style="color:var(--gris);float:right;">${fmtBs(p.precioUSD*state.tasaActual)} <small>($${p.precioUSD.toFixed(2)})</small></span></div>
   `).join('') : `<div class="autocomplete-item" style="color:var(--gris);">Sin resultados</div>`;
   lista.style.display = 'block';
 }
+function manejarEnterProducto(event){
+  if(event.key!=='Enter') return;
+  event.preventDefault();
+  const lista = document.getElementById('vProductoLista');
+  const hidden = document.getElementById('vProductoIdSel');
+  if(hidden.value){ document.getElementById('vPrecioUnitarioUSD').focus(); document.getElementById('vPrecioUnitarioUSD').select(); return; }
+  const primero = lista ? lista.querySelector('.autocomplete-item') : null;
+  if(primero && primero.onmousedown){ primero.onmousedown(); }
+  document.getElementById('vPrecioUnitarioUSD').focus();
+  document.getElementById('vPrecioUnitarioUSD').select();
+}
+
 function ocultarListaCombo(prefix){
   const lista = document.getElementById(prefix+'ProductoLista');
   if(lista) lista.style.display = 'none';
@@ -680,6 +821,7 @@ function agregarItemAlCarrito(){
   input.value = ''; hidden.value = ''; document.getElementById('vCantidad').value = 1; document.getElementById('vPrecioUnitarioUSD').value = '';
   document.getElementById('lblSubtotalItemUSD').textContent = '0.00'; document.getElementById('lblSubtotalItemBS').textContent = '0.00';
   renderCarritoTabla(); renderTotalesFactura();
+  input.focus();
 }
 function renderCarritoTabla(){
   const tbody = document.getElementById('tablaCarrito');
@@ -708,34 +850,110 @@ function procesarFactura(){
   if(!cliente){ alert('Por favor ingresa el nombre del cliente.'); return; }
   if(carritoActual.length===0){ alert('La factura está vacía.'); return; }
   const totalUSD = carritoActual.reduce((s,it)=>s+it.subtotalUSD,0);
+
+  let montoAbonadoUSD = 0;
+  let abonos = [];
+  let estadoFinal = estadoPago;
+  if(estadoPago==='Abonado'){
+    const montoInput = parseFloat(document.getElementById('vMontoAbonado').value) || 0;
+    if(montoInput<=0){ alert('Ingresa cuánto abona el cliente ahora.'); return; }
+    if(montoInput >= totalUSD - 0.0001){
+      // Si abona el total, en realidad la factura queda Cancelada.
+      montoAbonadoUSD = totalUSD; estadoFinal = 'Cancelado';
+    } else {
+      montoAbonadoUSD = montoInput; estadoFinal = 'Abonado';
+      abonos = [{fecha, montoUSD: montoInput, tasaHistorica: state.tasaActual, montoBS: montoInput*state.tasaActual}];
+    }
+  } else if(estadoPago==='Cancelado'){
+    montoAbonadoUSD = totalUSD;
+  }
+
   const nuevaFactura = {
-    id: uid(), numeroFactura: 'FAC-'+String(state.facturas.length+1).padStart(4,'0'),
+    id: uid(), numeroFactura: 'FAC-'+String(state.contadorFactura).padStart(4,'0'),
     fecha, cliente, items:[...carritoActual], totalUSD,
-    tasaHistorica: state.tasaActual, totalBS: totalUSD*state.tasaActual, estado: estadoPago,
+    tasaHistorica: state.tasaActual, totalBS: totalUSD*state.tasaActual, estado: estadoFinal,
+    montoAbonadoUSD, abonos,
     observacion: observacion || ''
   };
+  state.contadorFactura++;
   state.facturas.push(nuevaFactura);
+  guardarOActualizarClienteDesdeFactura(cliente);
   facturaClienteTmp = '';
   vaciarCarrito();
   saveState();
-  goTo(estadoPago==='Pendiente' ? 'deudores' : 'historial');
+  goTo(estadoFinal!=='Cancelado' ? 'deudores' : 'historial');
   generarReciboCliente(nuevaFactura.id);
 }
 
 // HISTORIAL DE VENTAS
+function facturasHistorialFiltradas(){
+  // Si hay texto de búsqueda, se busca en TODO el historial (ignora el filtro de fecha),
+  // porque el objetivo de buscar es encontrar algo aunque no sepas la fecha exacta.
+  let lista = state.filtroTextoHistorial ? state.facturas.slice() : facturasFiltradas();
+  const q = (state.filtroTextoHistorial||'').trim().toLowerCase();
+  if(q){
+    lista = lista.filter(f =>
+      f.numeroFactura.toLowerCase().includes(q) ||
+      f.cliente.toLowerCase().includes(q) ||
+      f.items.some(i=>i.nombre.toLowerCase().includes(q))
+    );
+  }
+  if(state.filtroEstadoHistorial){
+    lista = lista.filter(f=>f.estado===state.filtroEstadoHistorial);
+  }
+  return lista;
+}
+function actualizarBusquedaHistorial(){ state.filtroTextoHistorial = document.getElementById('histBuscar').value; render(); document.getElementById('histBuscar').focus(); document.getElementById('histBuscar').value=state.filtroTextoHistorial; }
+function actualizarEstadoHistorial(){ state.filtroEstadoHistorial = document.getElementById('histEstado').value; render(); }
+function limpiarFiltrosHistorial(){ state.filtroTextoHistorial=''; state.filtroEstadoHistorial=''; render(); }
+
+// Agrupa una lista de facturas por cliente, conservando el orden de aparición
+// (más reciente primero) para no repetir el nombre en cada renglón.
+function agruparFacturasPorCliente(lista){
+  const orden = [];
+  const mapa = {};
+  lista.forEach(f=>{
+    const key = normalizarNombre(f.cliente);
+    if(!mapa[key]){ mapa[key] = { cliente: f.cliente, facturas: [] }; orden.push(key); }
+    mapa[key].facturas.push(f);
+  });
+  return orden.map(k=>mapa[k]);
+}
+
 function renderHistorial(){
-  const lista = facturasFiltradas();
+  const lista = facturasHistorialFiltradas();
+  const grupos = agruparFacturasPorCliente([...lista].reverse());
   return `
   <div class="pagehead"><div><h1>Historial de Facturas</h1></div></div>
+  <div class="card" style="padding-bottom:14px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+      <div class="field" style="flex:2;min-width:200px;margin-bottom:0;"><label>Buscar (N° factura, cliente o producto)</label>
+        <input type="text" id="histBuscar" placeholder="Ej: Rosa, FAC-0032, tesis..." value="${state.filtroTextoHistorial||''}" oninput="actualizarBusquedaHistorial()"></div>
+      <div class="field" style="flex:1;min-width:150px;margin-bottom:0;"><label>Estado</label>
+        <select id="histEstado" onchange="actualizarEstadoHistorial()">
+          <option value="">Todos</option>
+          <option value="Cancelado" ${state.filtroEstadoHistorial==='Cancelado'?'selected':''}>Cancelado</option>
+          <option value="Pendiente" ${state.filtroEstadoHistorial==='Pendiente'?'selected':''}>Pendiente</option>
+          <option value="Abonado" ${state.filtroEstadoHistorial==='Abonado'?'selected':''}>Abonado</option>
+        </select></div>
+      <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorial()">Limpiar</button>
+    </div>
+    ${state.filtroTextoHistorial ? `<div class="notice" style="margin:12px 0 0;">&#128269; Buscando en todo el historial (se ignora el filtro de fecha de arriba).</div>` : ''}
+  </div>
   <div class="card"><div class="table-wrap"><table>
-    <thead><tr><th>N° Factura</th><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total ($)</th><th>Tasa</th><th>Total (Bs)</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr><th>Cliente</th><th>N° Factura</th><th>Fecha</th><th>Detalle</th><th>Total ($)</th><th>Tasa</th><th>Total (Bs)</th><th>Estado</th><th></th></tr></thead>
     <tbody>
-    ${lista.length? [...lista].reverse().map(f=>{
-      const resumen = f.items.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ');
-      return `<tr><td><b>${f.numeroFactura}</b></td><td>${f.fecha}</td><td>${f.cliente}</td><td><small>${resumen}</small></td>
-      <td><b>${fmtUSD(f.totalUSD)}</b></td><td>${f.tasaHistorica.toFixed(2)}</td><td>${fmtBs(f.totalBS)}</td><td>${badgeEstado(f.estado)}</td>
-      <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="editarFactura(${f.id})">&#9998;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
-    }).join('') : `<tr><td colspan="9" class="empty">No hay facturas en esta fecha.</td></tr>`}
+    ${grupos.length? grupos.map(g=>
+      g.facturas.map((f,idx)=>{
+        const resumen = f.items.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ');
+        const celdaCliente = idx===0
+          ? `<td rowspan="${g.facturas.length}" style="vertical-align:top;border-right:2px solid var(--verde-claro);background:rgba(76,175,132,.04);"><b>${g.cliente}</b>${g.facturas.length>1?`<br><small style="color:var(--gris);">${g.facturas.length} facturas</small>`:''}</td>`
+          : '';
+        return `<tr>${celdaCliente}<td><b>${f.numeroFactura}</b></td><td>${f.fecha}</td><td><small>${resumen}</small></td>
+        <td><b>${fmtUSD(f.totalUSD)}</b></td><td>${f.tasaHistorica.toFixed(2)}</td><td>${fmtBs(f.totalBS)}</td><td>${badgeEstado(f.estado)}</td>
+        <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="editarFactura(${f.id})">&#9998;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
+      }).join('')
+    ).join('') : `<tr><td colspan="9" class="empty">No se encontraron facturas con esos filtros.</td></tr>`}
     </tbody>
   </table></div></div>
   `;
@@ -755,7 +973,17 @@ function verDetalleFactura(id){
     <div class="totales-box" style="margin-top:12px;">
       <div class="row"><span>TOTAL ($):</span><span><b>${fmtUSD(f.totalUSD)}</b></span></div>
       <div class="row"><span>TOTAL CONGELADO (Bs):</span><span><b>${fmtBs(f.totalBS)}</b></span></div>
+      ${(f.montoAbonadoUSD>0) ? `<div class="row"><span>ABONADO:</span><span>${fmtUSD(f.montoAbonadoUSD)}</span></div>
+      <div class="row"><span>SALDO PENDIENTE:</span><span><b>${fmtUSD(saldoFactura(f))}</b></span></div>` : ''}
     </div>
+    ${(f.abonos && f.abonos.length) ? `
+    <div style="margin-top:14px;">
+      <div style="font-size:12.5px;font-weight:700;color:var(--gris-txt);margin-bottom:6px;">Abonos registrados</div>
+      <div class="table-wrap" style="max-height:160px;"><table>
+        <thead><tr><th>Fecha</th><th>Monto ($)</th><th>Tasa ese día</th></tr></thead>
+        <tbody>${f.abonos.map(a=>`<tr><td>${a.fecha}</td><td>${fmtUSD(a.montoUSD)}</td><td>${a.tasaHistorica.toFixed(2)}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>` : ''}
   `);
 }
 
@@ -848,33 +1076,254 @@ function guardarEdicionFactura(){
   closeModal(); saveState(); render();
 }
 
-// DEUDORES
-function renderDeudores(){
-  const pendientes = state.facturas.filter(f=>f.estado==='Pendiente');
+// CLIENTES
+let clienteEditId = null;
+
+function normalizarNombre(n){ return (n||'').trim().toLowerCase(); }
+
+function buscarClientePorNombre(nombre){
+  const n = normalizarNombre(nombre);
+  return state.clientes.find(c=>normalizarNombre(c.nombre)===n);
+}
+
+// Se llama al procesar una factura: si el nombre no existe como cliente registrado, lo crea automáticamente.
+function guardarOActualizarClienteDesdeFactura(nombreCliente){
+  if(!buscarClientePorNombre(nombreCliente)){
+    state.clientes.push({id: uid(), nombre: nombreCliente, telefono: '', notas: ''});
+  }
+}
+
+function deudaClienteUSD(nombre){
+  const n = normalizarNombre(nombre);
+  return state.facturas.filter(f=>(f.estado==='Pendiente'||f.estado==='Abonado') && normalizarNombre(f.cliente)===n).reduce((s,f)=>s+saldoFactura(f),0);
+}
+
+function totalCompradoClienteUSD(nombre){
+  const n = normalizarNombre(nombre);
+  return state.facturas.filter(f=>normalizarNombre(f.cliente)===n).reduce((s,f)=>s+f.totalUSD,0);
+}
+
+function renderClientes(){
   return `
-  <div class="pagehead"><div><h1>Cuentas por Cobrar</h1></div></div>
+  <div class="pagehead"><div><h1>&#128100; Clientes</h1><div class="sub">Datos de contacto y resumen de compras / deuda por cliente</div></div></div>
+  <div class="two-col">
+    <div class="card">
+      <h2 id="tituloFormCliente">${clienteEditId ? '&#9998; Editar Cliente' : '+ Nuevo Cliente'}</h2>
+      <div class="field"><label>Nombre</label><input type="text" id="clNombre"></div>
+      <div class="field"><label>Teléfono</label><input type="text" id="clTelefono" placeholder="Ej: 0414-1234567"></div>
+      <div class="field"><label>Notas</label><textarea id="clNotas" rows="2" placeholder="Preferencias, dirección, etc."></textarea></div>
+      <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
+      ${clienteEditId ? `<button class="btn btn-outline" style="margin-left:8px;" onclick="clienteEditId=null;render();">Cancelar edición</button>` : ''}
+    </div>
+    <div class="card">
+      <h2>Listado de Clientes</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Comprado Total ($)</th><th>Deuda Pendiente ($)</th><th></th></tr></thead>
+        <tbody>
+          ${state.clientes.length ? state.clientes.map(c=>{
+            const deuda = deudaClienteUSD(c.nombre);
+            return `<tr><td><b>${c.nombre}</b></td><td>${c.telefono||'—'}</td><td>${fmtUSD(totalCompradoClienteUSD(c.nombre))}</td>
+            <td>${deuda>0? `<span class="badge rojo">${fmtUSD(deuda)}</span>` : '—'}</td>
+            <td class="row-actions"><button onclick="prepararEdicionCliente(${c.id})">&#9998;</button><button class="del" onclick="eliminarCliente(${c.id})">&#128465;</button></td></tr>`;
+          }).join('') : `<tr><td colspan="5" class="empty">Aún no tienes clientes registrados. Se crean automáticamente al facturar, o agrégalos aquí.</td></tr>`}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+  `;
+}
+
+function guardarCliente(){
+  const nombre = document.getElementById('clNombre').value.trim();
+  const telefono = document.getElementById('clTelefono').value.trim();
+  const notas = document.getElementById('clNotas').value.trim();
+  if(!nombre){ alert('Ingresa el nombre del cliente.'); return; }
+  if(clienteEditId){
+    const i = state.clientes.findIndex(c=>c.id===clienteEditId);
+    if(i!==-1){ state.clientes[i] = {...state.clientes[i], nombre, telefono, notas}; }
+  } else {
+    if(buscarClientePorNombre(nombre)){ alert('Ya existe un cliente con ese nombre.'); return; }
+    state.clientes.push({id: uid(), nombre, telefono, notas});
+  }
+  clienteEditId = null;
+  saveState(); render();
+}
+
+function prepararEdicionCliente(id){
+  const c = state.clientes.find(x=>x.id===id);
+  if(!c) return;
+  clienteEditId = id; render();
+  document.getElementById('clNombre').value = c.nombre;
+  document.getElementById('clTelefono').value = c.telefono||'';
+  document.getElementById('clNotas').value = c.notas||'';
+}
+
+function eliminarCliente(id){
+  if(confirm('¿Eliminar este cliente? (No borra sus facturas ya emitidas)')){
+    state.clientes = state.clientes.filter(c=>c.id!==id);
+    saveState(); render();
+  }
+}
+
+function filtrarClientesCombo(){
+  const input = document.getElementById('vCliente');
+  const lista = document.getElementById('vClienteLista');
+  if(!input || !lista) return;
+  const q = input.value.trim().toLowerCase();
+  const matches = q ? state.clientes.filter(c=>c.nombre.toLowerCase().includes(q)) : state.clientes;
+  lista.innerHTML = matches.length ? matches.slice(0,30).map(c=>{
+    const deuda = deudaClienteUSD(c.nombre);
+    return `<div class="autocomplete-item" onmousedown="seleccionarClienteCombo('${c.id}')">${c.nombre} ${deuda>0?`<span style="color:var(--rojo-txt);float:right;">debe ${fmtUSD(deuda)}</span>`:''}</div>`;
+  }).join('') : (q ? `<div class="autocomplete-item" style="color:var(--gris);">Cliente nuevo — se creará al facturar</div>` : '');
+  lista.style.display = matches.length || q ? 'block' : 'none';
+}
+
+function ocultarListaClientes(){
+  const lista = document.getElementById('vClienteLista');
+  if(lista) lista.style.display = 'none';
+}
+
+function seleccionarClienteCombo(id){
+  const c = state.clientes.find(x=>x.id==id);
+  if(!c) return;
+  facturaClienteTmp = c.nombre;
+  document.getElementById('vCliente').value = c.nombre;
+  ocultarListaClientes();
+}
+
+// DEUDORES
+function facturasPendientesCliente(nombre){
+  const n = normalizarNombre(nombre);
+  return state.facturas
+    .filter(f=> (f.estado==='Pendiente'||f.estado==='Abonado') && normalizarNombre(f.cliente)===n)
+    .sort((a,b)=> a.fecha.localeCompare(b.fecha));
+}
+
+// Agrupa TODAS las facturas pendientes/abonadas por cliente, para no repetir
+// un renglón por cada crédito que pida la misma persona.
+function deudoresAgrupados(){
+  const nombres = [...new Set(
+    state.facturas.filter(f=>f.estado==='Pendiente'||f.estado==='Abonado').map(f=>f.cliente)
+  )];
+  return nombres.map(nombre=>{
+    const facturas = facturasPendientesCliente(nombre);
+    const totalUSD = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+    return { cliente: nombre, facturas, totalUSD, fechaMasAntigua: facturas[0] ? facturas[0].fecha : hoyStr() };
+  }).filter(g=>g.totalUSD>0.0001).sort((a,b)=>a.fechaMasAntigua.localeCompare(b.fechaMasAntigua));
+}
+
+function renderDeudores(){
+  const grupos = deudoresAgrupados();
+  return `
+  <div class="pagehead"><div><h1>Cuentas por Cobrar</h1><div class="sub">Un renglón por cliente, aunque tenga varios créditos pendientes</div></div></div>
   <div class="card"><div class="table-wrap"><table>
-    <thead><tr><th>Fecha</th><th>Días</th><th>Cliente</th><th>Detalle</th><th>Total ($)</th><th>Total HOY (Bs)</th><th>Acciones</th></tr></thead>
+    <thead><tr><th>Días</th><th>Cliente</th><th>Acumulado por fecha</th><th>Total ($)</th><th>Total HOY (Bs)</th><th>Acciones</th></tr></thead>
     <tbody>
-    ${pendientes.length? pendientes.map(f=>`
-      <tr><td>${f.fecha}</td><td><span class="badge ${diasDesde(f.fecha)>15?'rojo':'amar'}">${diasDesde(f.fecha)} d</span></td>
-      <td><b>${f.cliente}</b></td><td><small>${f.items.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ')}</small></td>
-      <td><b>${fmtUSD(f.totalUSD)}</b></td><td style="color:var(--rojo-txt);"><b>${fmtBs(f.totalUSD*state.tasaActual)}</b></td>
-      <td><button class="btn btn-success btn-sm" onclick="cobrarDeuda(${f.id})">&#128176; Cobrar</button> <button class="btn btn-outline btn-sm" onclick="generarReciboCliente(${f.id})">&#129534; Recibo</button></td></tr>
-    `).join('') : `<tr><td colspan="7" class="empty">No hay deudas pendientes.</td></tr>`}
+    ${grupos.length? grupos.map(g=>{
+      const dias = diasDesde(g.fechaMasAntigua);
+      const desglose = g.facturas.map(f=>`${f.fecha}: <b>${fmtUSD(saldoFactura(f))}</b>${f.estado==='Abonado'?' <small>(abonado parcial)</small>':''}`).join('<br>');
+      return `<tr><td><span class="badge ${dias>15?'rojo':'amar'}">${dias} d</span></td>
+      <td><b>${g.cliente}</b><br><small style="color:var(--gris);">${g.facturas.length} crédito(s)</small></td>
+      <td style="font-size:11.5px;">${desglose}</td>
+      <td><b>${fmtUSD(g.totalUSD)}</b></td><td style="color:var(--rojo-txt);"><b>${fmtBs(g.totalUSD*state.tasaActual)}</b></td>
+      <td class="row-actions">
+        <button class="btn btn-outline btn-sm" onclick="abrirGestionDeudaCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128203; Gestionar</button>
+        <button class="btn btn-success btn-sm" onclick="cobrarTodoCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128176; Cobrar Todo</button>
+      </td></tr>`;
+    }).join('') : `<tr><td colspan="6" class="empty">No hay deudas pendientes.</td></tr>`}
     </tbody>
   </table></div></div>
   `;
 }
+
+// Modal de detalle: ver y gestionar cada crédito individual del cliente (abonar / cobrar / recibo)
+function abrirGestionDeudaCliente(nombreCliente){
+  const facturas = facturasPendientesCliente(nombreCliente);
+  if(!facturas.length){ closeModal(); return; }
+  const totalUSD = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+  openModal(`&#128203; Cuenta por Cobrar — ${nombreCliente}`, `
+    <div class="table-wrap" style="max-height:320px;"><table>
+      <thead><tr><th>Fecha</th><th>Factura</th><th>Total</th><th>Abonado</th><th>Saldo</th><th></th></tr></thead>
+      <tbody>
+      ${facturas.map(f=>`
+        <tr><td>${f.fecha}</td><td>${f.numeroFactura}</td><td>${fmtUSD(f.totalUSD)}</td>
+        <td>${fmtUSD(f.montoAbonadoUSD||0)}</td><td><b>${fmtUSD(saldoFactura(f))}</b></td>
+        <td class="row-actions">
+          <button class="btn btn-outline btn-sm" onclick="pedirAbono(${f.id},'${nombreCliente.replace(/'/g,"\\'")}')">Abonar</button>
+          <button class="btn btn-success btn-sm" onclick="cobrarDeuda(${f.id});abrirGestionDeudaCliente('${nombreCliente.replace(/'/g,"\\'")}')">Cobrar</button>
+          <button class="btn btn-outline btn-sm" onclick="generarReciboCliente(${f.id})">&#129534;</button>
+        </td></tr>
+      `).join('')}
+      </tbody>
+    </table></div>
+    <div class="totales-box" style="margin-top:12px;">
+      <div class="row"><span>TOTAL ADEUDADO:</span><span><b>${fmtUSD(totalUSD)}</b></span></div>
+    </div>
+  `);
+}
+
+function pedirAbono(facturaId, nombreCliente){
+  const f = state.facturas.find(x=>x.id==facturaId);
+  if(!f) return;
+  const saldo = saldoFactura(f);
+  const montoStr = prompt(`Factura ${f.numeroFactura} — Saldo pendiente: ${fmtUSD(saldo)}\n¿Cuánto abona ahora? ($)`);
+  if(montoStr===null) return;
+  const monto = parseFloat(montoStr);
+  if(isNaN(monto) || monto<=0){ alert('Monto inválido.'); return; }
+  if(monto > saldo + 0.0001){ alert('El abono no puede ser mayor al saldo pendiente ('+fmtUSD(saldo)+').'); return; }
+  registrarAbono(facturaId, monto);
+  render();
+  if(nombreCliente) abrirGestionDeudaCliente(nombreCliente);
+}
+
+function registrarAbono(facturaId, montoUSD){
+  const i = state.facturas.findIndex(f=>f.id==facturaId);
+  if(i===-1) return;
+  const f = state.facturas[i];
+  if(!f.abonos) f.abonos = [];
+  f.abonos.push({fecha: hoyStr(), montoUSD, tasaHistorica: state.tasaActual, montoBS: montoUSD*state.tasaActual});
+  f.montoAbonadoUSD = (f.montoAbonadoUSD||0) + montoUSD;
+  if(f.montoAbonadoUSD >= f.totalUSD - 0.0001){
+    f.montoAbonadoUSD = f.totalUSD;
+    f.estado = 'Cancelado';
+  } else {
+    f.estado = 'Abonado';
+  }
+  saveState();
+}
+
 function cobrarDeuda(id){
   const i = state.facturas.findIndex(f=>f.id==id);
   if(i===-1) return;
-  if(confirm(`¿Marcar factura de ${state.facturas[i].cliente} como PAGADA HOY?`)){
+  const saldo = saldoFactura(state.facturas[i]);
+  if(confirm(`¿Marcar el saldo restante (${fmtUSD(saldo)}) de ${state.facturas[i].cliente} como PAGADO HOY?`)){
+    if(saldo>0.0001) registrarAbono(id, saldo);
     state.facturas[i].estado = 'Cancelado';
+    state.facturas[i].montoAbonadoUSD = state.facturas[i].totalUSD;
     state.facturas[i].tasaHistorica = state.tasaActual;
     state.facturas[i].totalBS = state.facturas[i].totalUSD * state.tasaActual;
     saveState(); render();
   }
+}
+
+// Cobra de una sola vez TODOS los créditos pendientes de un mismo cliente
+function cobrarTodoCliente(nombreCliente){
+  const facturas = facturasPendientesCliente(nombreCliente);
+  if(!facturas.length) return;
+  const total = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+  if(!confirm(`¿Marcar TODOS los créditos de ${nombreCliente} (${fmtUSD(total)}) como pagados hoy?`)) return;
+  facturas.forEach(f=>{
+    const saldo = saldoFactura(f);
+    if(saldo>0.0001) registrarAbono(f.id, saldo);
+    const idx = state.facturas.findIndex(x=>x.id===f.id);
+    if(idx!==-1){
+      state.facturas[idx].estado='Cancelado';
+      state.facturas[idx].montoAbonadoUSD = state.facturas[idx].totalUSD;
+      state.facturas[idx].tasaHistorica = state.tasaActual;
+      state.facturas[idx].totalBS = state.facturas[idx].totalUSD * state.tasaActual;
+    }
+  });
+  saveState(); render();
 }
 
 // EGRESOS
@@ -929,12 +1378,12 @@ function renderCatalogo(){
       <button class="btn btn-primary" id="btnGuardarCatalogo" onclick="guardarProductoCatalogo()">Guardar Producto</button>
     </div>
     <div class="card">
-      <h2>Productos</h2>
+      <h2>Productos <small style="font-weight:400;color:var(--gris);">— Bs calculado a la tasa de hoy (${state.tasaActual.toFixed(2)})</small></h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>#</th><th>Nombre</th><th>Precio ($)</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Nombre</th><th>Precio ($)</th><th>Precio (Bs hoy)</th><th></th></tr></thead>
         <tbody>
         ${state.catalogo.map((p,i)=>`
-          <tr><td>${i+1}</td><td>${p.nombre}</td><td><b>${fmtUSD(p.precioUSD)}</b></td>
+          <tr><td>${i+1}</td><td>${p.nombre}</td><td><b>${fmtUSD(p.precioUSD)}</b></td><td>${fmtBs(p.precioUSD*state.tasaActual)}</td>
           <td class="row-actions"><button onclick="prepararEdicionCatalogo(${p.id})">&#9998;</button><button class="del" onclick="eliminarProductoCatalogo(${p.id})">&#128465;</button></td></tr>
         `).join('')}
         </tbody>
@@ -979,6 +1428,30 @@ function renderConfiguracion(){
   <div class="card">
     <h2>Respaldo de Datos</h2>
     <button class="btn btn-success" onclick="descargarRespaldo()">&#8595; Descargar Copia (.json)</button>
+    <div style="margin-top:16px;">
+      <div style="font-size:12.5px;font-weight:700;color:var(--gris-txt);margin-bottom:8px;">Respaldos automáticos (últimos ${(state.backups||[]).length} de 7 días)</div>
+      <div class="table-wrap" style="max-height:180px;"><table>
+        <thead><tr><th>Fecha</th><th>Hora del último guardado</th><th></th></tr></thead>
+        <tbody>
+        ${(state.backups||[]).length ? [...state.backups].reverse().map(b=>`
+          <tr><td>${b.fecha}</td><td>${b.hora||'—'}</td>
+          <td class="row-actions"><button class="btn btn-outline btn-sm" onclick="restaurarRespaldo('${b.fecha}')">Restaurar</button></td></tr>
+        `).join('') : `<tr><td colspan="3" class="empty">Aún no hay respaldos automáticos — se generan solos, uno por día que uses el sistema.</td></tr>`}
+        </tbody>
+      </table></div>
+      <div class="notice" style="margin-top:10px;"><b>&#9432;</b> Estos respaldos se guardan dentro de tu propio navegador (no ocupan espacio externo). No reemplazan la copia manual .json para guardar en otro lugar.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Historial de Tasa de Cambio</h2>
+    <div class="table-wrap" style="max-height:220px;"><table>
+      <thead><tr><th>Fecha</th><th>Hora</th><th>Tasa (Bs/$)</th></tr></thead>
+      <tbody>
+      ${(state.historialTasas||[]).length ? [...state.historialTasas].reverse().slice(0,100).map(t=>`
+        <tr><td>${t.fecha}</td><td>${t.hora||'—'}</td><td><b>${t.tasa.toFixed(2)}</b></td></tr>
+      `).join('') : `<tr><td colspan="3" class="empty">Aún no se ha registrado ningún cambio de tasa.</td></tr>`}
+      </tbody>
+    </table></div>
   </div>
   <div class="card">
     <h2>Modo Portátil USB</h2>
@@ -1011,6 +1484,13 @@ loadState();
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
   (function() {
+    // Si el navegador bloqueó el script de Firebase (bloqueadores de anuncios/privacidad,
+    // sin internet, etc.) el sistema sigue funcionando normal con guardado local (localStorage).
+    if (typeof firebase === 'undefined') {
+      console.warn('Firebase no se pudo cargar (posiblemente bloqueado por el navegador). El sistema seguirá funcionando solo con almacenamiento local.');
+      if (window.setEstadoNube) window.setEstadoNube('local');
+      return;
+    }
     var firebaseConfig = {
       apiKey: "AIzaSyBwJu1QVe_z2lRU-qXpajlozg5pIaaQdBk",
       authDomain: "facturacion-may.firebaseapp.com",
@@ -1027,8 +1507,12 @@ loadState();
     var db = firebase.firestore();
     var docRef = db.collection("sistema").doc("datosGenerales");
 
+    // Si en 6 segundos no hay respuesta de Firebase (ej: sin internet), asumimos modo local.
+    setTimeout(function(){ if (estadoNube==='verificando' && window.setEstadoNube) window.setEstadoNube('local'); }, 6000);
+
     // Sincronización en tiempo real desde Firebase
     docRef.onSnapshot(function(snapshot) {
+      if (window.setEstadoNube) window.setEstadoNube('conectado');
       if (snapshot.exists) {
         var data = snapshot.data();
         localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(data));
@@ -1039,14 +1523,17 @@ loadState();
       }
     }, function(error) {
       console.error("Error al recibir desde Firebase:", error);
+      if (window.setEstadoNube) window.setEstadoNube('error');
     });
 
     // Función para escribir cambios en Firebase
     window.guardarEnNube = function(datos) {
       docRef.set(datos).then(function() {
         console.log("Guardado en la nube con éxito");
+        if (window.setEstadoNube) window.setEstadoNube('conectado');
       }).catch(function(error) {
         console.error("Error al guardar en la nube:", error);
+        if (window.setEstadoNube) window.setEstadoNube('error');
       });
     };
   })();
