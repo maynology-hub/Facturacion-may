@@ -1257,5 +1257,44 @@ function guardarEdicionAvanzada(){
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 loadState();
 </script>
+// ==========================================
+// CONFIGURACIÓN E INTEGRACIÓN CON FIREBASE
+// ==========================================
+</script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwJu1QVe_z2lRU-qXpajlozg5pIaaQdBk",
+    authDomain: "facturacion-may.firebaseapp.com",
+    projectId: "facturacion-may",
+    storageBucket: "facturacion-may.firebasestorage.app",
+    messagingSenderId: "206591286218",
+    appId: "1:206591286218:web:900d4fa57ce83b34b74d33"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const docRef = doc(db, "sistema", "datosGenerales");
+
+  // Escuchar cambios en tiempo real
+  onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      localStorage.setItem("datosSistema", JSON.stringify(data));
+      window.dispatchEvent(new Event("storage"));
+    }
+  });
+
+  // Función global para sincronizar datos
+  window.guardarEnNube = async function(datos) {
+    try {
+      await setDoc(docRef, datos);
+      console.log("Sincronizado con Firebase correctamente");
+    } catch (error) {
+      console.error("Error al sincronizar con Firebase:", error);
+    }
+  };
 </body>
 </html>
