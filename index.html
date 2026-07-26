@@ -257,7 +257,8 @@ async function loadState(){
 }
 async function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e){ console.error('No se pudo guardar en el almacenamiento local', e); alert('No se pudo guardar. Verifica que el navegador no esté en modo privado/incógnito y que tenga espacio de almacenamiento disponible.'); }
+  catch(e){ console.error('No se pudo guardar en el almacenamiento local', e); alert('No se pudo guardar. Verifica que...'); }
+  if(window.guardarEnNube){ await window.guardarEnNube(state); }
   if(dataFileHandle){ await guardarEnArchivoUSB(); }
 }
 
