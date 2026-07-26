@@ -37,7 +37,6 @@
 body{margin:0;font-family:var(--font);background:var(--crema);color:#41504A;}
 #app{display:flex;min-height:100vh;}
 
-/* ---------- SIDEBAR ---------- */
 .sidebar{
   width:235px;flex-shrink:0;background:linear-gradient(180deg,var(--verde-osc),#1F4F38);
   color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
@@ -56,7 +55,6 @@ body{margin:0;font-family:var(--font);background:var(--crema);color:#41504A;}
 .sidebar .icon{width:18px;text-align:center;font-size:14px;}
 .sidebar .foot{padding:16px 20px;font-size:10.5px;color:#BFE0C9;border-top:1px solid rgba(255,255,255,.14);}
 
-/* ---------- MAIN ---------- */
 main{flex:1;padding:22px 30px 60px;max-width:1360px;}
 .topbar{
   display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
@@ -77,7 +75,6 @@ main{flex:1;padding:22px 30px 60px;max-width:1360px;}
 .card{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(140,170,150,.08);}
 .card h2{font-family:var(--font-title);font-size:14.5px;margin:0 0 14px;color:var(--verde-osc);letter-spacing:.2px;}
 
-/* KPI cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:20px;}
 .kpi{background:linear-gradient(135deg,var(--verde-osc),var(--verde-fuerte));border-radius:16px;padding:16px 18px;color:#fff;border-left:4px solid var(--rosa);}
 .kpi .t{font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;color:#DCEFE0;margin-bottom:6px;font-weight:700;}
@@ -87,7 +84,6 @@ main{flex:1;padding:22px 30px 60px;max-width:1360px;}
 .kpi.amar{background:linear-gradient(135deg,#C79A46,#DDB768);border-left-color:#FDF1DA;}
 .kpi.rojo{background:linear-gradient(135deg,#C97389,#E393A9);border-left-color:#FCE6EB;}
 
-/* Table */
 .table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;}
 table{width:100%;border-collapse:collapse;font-size:12.8px;}
 thead th{background:var(--verde);color:#2E4A38;text-align:left;padding:10px 10px;font-weight:700;white-space:nowrap;position:sticky;top:0;}
@@ -105,7 +101,6 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .row-actions button:hover{background:var(--verde-claro);}
 .row-actions .del:hover{background:var(--rojo-bg);}
 
-/* Buttons */
 .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:filter .15s,transform .1s;font-family:var(--font);}
 .btn:hover{filter:brightness(1.05);}
 .btn:active{transform:scale(.98);}
@@ -124,7 +119,6 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 }
 
 .recibo-card{background:linear-gradient(160deg,var(--verde-claro),#fff);border:2px dashed var(--verde);border-radius:18px;padding:22px 20px;text-align:center;}
-.recibo-emoji{font-size:30px;margin-bottom:2px;}
 .recibo-brand{font-family:var(--font-title);font-weight:700;color:var(--verde-osc);font-size:15.5px;}
 .recibo-doc{font-size:12px;color:var(--gris-txt);margin-top:3px;}
 .recibo-fecha{font-size:11px;color:var(--gris);margin-top:1px;}
@@ -137,7 +131,6 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .recibo-total-usd{font-family:var(--font-title);font-size:32px;font-weight:700;color:var(--verde-osc);margin-top:2px;}
 .recibo-total-bs{font-size:16.5px;font-weight:700;color:var(--rojo-txt);background:var(--rosa-claro);display:inline-block;padding:7px 18px;border-radius:20px;margin-top:8px;}
 .recibo-tasa{font-size:11px;color:var(--gris);margin-top:9px;}
-.recibo-obs{margin-top:14px;background:var(--amar-bg);color:var(--amar-txt);border-radius:10px;padding:9px 12px;font-size:12px;text-align:left;}
 
 .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--rosa-fuerte);outline-offset:1px;}
 
@@ -157,10 +150,7 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 
 .totales-box{background:var(--verde-claro);border:1px solid var(--borde);border-radius:12px;padding:14px 16px;margin-top:6px;}
 .totales-box .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--gris-txt);padding:3px 0;}
-.totales-box .grand{font-family:var(--font-title);font-size:17px;font-weight:700;color:var(--verde-osc);margin-top:6px;}
-.totales-box .grand2{font-size:14px;font-weight:700;color:var(--verde-txt);}
 
-/* Modal */
 .overlay{position:fixed;inset:0;background:rgba(60,80,65,.35);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
 .overlay.show{display:flex;}
 .modal{background:#fff;border-radius:18px;padding:24px 28px 26px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;}
@@ -199,7 +189,7 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
       <div class="tag" id="brandTag">Facturación &amp; Deudores</div>
     </div>
     <nav id="navList"></nav>
-    <div class="foot">Multimoneda &middot; Tasa histórica congelada por factura</div>
+    <div class="foot">Multimoneda &middot; Tasa congelada por factura</div>
   </aside>
   <main id="content"></main>
 </div>
@@ -245,116 +235,14 @@ function loadState(){
   try{
     const guardado = localStorage.getItem(STORAGE_KEY);
     if(guardado){ state = Object.assign(seedState(), JSON.parse(guardado)); }
-  }catch(e){ console.error('No se pudo leer el almacenamiento local', e); }
+  }catch(e){ console.error('Error al leer localStorage', e); }
   render();
-  intentarReconectarArchivoUSB();
 }
 
 function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e){ console.error('No se pudo guardar en localStorage', e); }
+  catch(e){ console.error('Error al guardar localStorage', e); }
   if(window.guardarEnNube){ window.guardarEnNube(state); }
-  if(dataFileHandle){ guardarEnArchivoUSB(); }
-}
-
-// MODO PORTÁTIL USB
-let dataFileHandle = null;
-const FS_SUPPORTED = 'showOpenFilePicker' in window;
-
-function idbAbrir(){
-  return new Promise((resolve,reject)=>{
-    const req = indexedDB.open('sfd-handles-db', 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore('handles'); };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbGuardarHandle(handle){
-  try{
-    const db = await idbAbrir();
-    await new Promise((res,rej)=>{
-      const tx = db.transaction('handles','readwrite');
-      tx.objectStore('handles').put(handle, 'archivoDatos');
-      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
-    });
-  }catch(e){}
-}
-async function idbLeerHandle(){
-  try{
-    const db = await idbAbrir();
-    return await new Promise((res,rej)=>{
-      const tx = db.transaction('handles','readonly');
-      const req = tx.objectStore('handles').get('archivoDatos');
-      req.onsuccess = () => res(req.result || null);
-      req.onerror = () => rej(req.error);
-    });
-  }catch(e){ return null; }
-}
-async function crearArchivoDatosUSB(){
-  if(!FS_SUPPORTED){ alert('Navegador no compatible con USB.'); return; }
-  try{
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'datos-sistema-comercial.json',
-      types: [{description:'Datos del Sistema Comercial', accept:{'application/json':['.json']}}]
-    });
-    dataFileHandle = handle;
-    await idbGuardarHandle(handle);
-    await guardarEnArchivoUSB();
-    actualizarEstadoConexionArchivo();
-    alert('Listo. Guardado en tu USB.');
-  }catch(e){}
-}
-async function conectarArchivoDatosUSB(){
-  if(!FS_SUPPORTED){ alert('Navegador no compatible con USB.'); return; }
-  try{
-    const [handle] = await window.showOpenFilePicker({
-      types: [{description:'Datos del Sistema Comercial', accept:{'application/json':['.json']}}]
-    });
-    dataFileHandle = handle;
-    await idbGuardarHandle(handle);
-    if(confirm('¿Cargar datos de este archivo?')){ await cargarDesdeArchivoUSB(); } 
-    else { await guardarEnArchivoUSB(); }
-    actualizarEstadoConexionArchivo();
-  }catch(e){}
-}
-async function guardarEnArchivoUSB(){
-  if(!dataFileHandle) return;
-  try{
-    const perm = await dataFileHandle.requestPermission({mode:'readwrite'});
-    if(perm !== 'granted') return;
-    const writable = await dataFileHandle.createWritable();
-    await writable.write(JSON.stringify(state, null, 2));
-    await writable.close();
-  }catch(e){}
-}
-async function cargarDesdeArchivoUSB(){
-  if(!dataFileHandle) return;
-  try{
-    const perm = await dataFileHandle.requestPermission({mode:'readwrite'});
-    if(perm !== 'granted') return;
-    const file = await dataFileHandle.getFile();
-    const texto = await file.text();
-    if(texto && texto.trim()){
-      state = Object.assign(seedState(), JSON.parse(texto));
-      saveState(); render();
-    }
-  }catch(e){}
-}
-async function intentarReconectarArchivoUSB(){
-  if(!FS_SUPPORTED) return;
-  const handle = await idbLeerHandle();
-  if(!handle) return;
-  try{
-    const perm = await handle.queryPermission({mode:'readwrite'});
-    if(perm === 'granted'){ dataFileHandle = handle; actualizarEstadoConexionArchivo(); }
-  }catch(e){}
-}
-function actualizarEstadoConexionArchivo(){
-  const el = document.getElementById('estadoArchivoUSB');
-  if(!el) return;
-  el.innerHTML = dataFileHandle
-    ? `&#9989; Conectado a: <b>${dataFileHandle.name}</b>.`
-    : (FS_SUPPORTED ? `&#9888;&#65039; Sin archivo USB conectado.` : `&#10060; Navegador sin soporte USB.`);
 }
 
 // UTILIDADES
@@ -442,7 +330,7 @@ function openModal(title, bodyHTML){
 }
 function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
 
-// RENDER PRINCIPAL
+// RENDER
 function render(){
   renderNav();
   actualizarMarca();
@@ -453,7 +341,6 @@ function render(){
   };
   c.innerHTML = topbarHTML() + (views[state.currentView]||renderDashboard)();
   if(state.currentView==='factura'){ renderCarritoTabla(); renderTotalesFactura(); }
-  if(state.currentView==='configuracion'){ actualizarEstadoConexionArchivo(); }
 }
 function actualizarMarca(){
   const n = document.getElementById('brandName'), t = document.getElementById('brandTag');
@@ -652,8 +539,6 @@ function seleccionarProductoCombo(prefix, id){
     document.getElementById('vPrecioUnitarioUSD').value = prod.precioUSD;
     document.getElementById('vCantidad').value = 1;
     calcularSubtotalItem();
-  } else if(prefix==='ef'){
-    document.getElementById('efPrecio').value = prod.precioUSD;
   }
 }
 function calcularSubtotalItem(){
@@ -734,7 +619,7 @@ function renderHistorial(){
       const resumen = f.items.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ');
       return `<tr><td><b>${f.numeroFactura}</b></td><td>${f.fecha}</td><td>${f.cliente}</td><td><small>${resumen}</small></td>
       <td><b>${fmtUSD(f.totalUSD)}</b></td><td>${f.tasaHistorica.toFixed(2)}</td><td>${fmtBs(f.totalBS)}</td><td>${badgeEstado(f.estado)}</td>
-      <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="editarFactura(${f.id})">&#9998;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
+      <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
     }).join('') : `<tr><td colspan="9" class="empty">No hay facturas en esta fecha.</td></tr>`}
     </tbody>
   </table></div></div>
@@ -797,55 +682,6 @@ function eliminarFactura(id){
     state.facturas = state.facturas.filter(f=>f.id!=id);
     saveState(); render();
   }
-}
-
-// EDICIÓN FACTURA
-let facturaEditId = null;
-let facturaEditItems = [];
-function editarFactura(id){
-  const f = state.facturas.find(x=>x.id==id);
-  if(!f) return;
-  facturaEditId = id;
-  facturaEditItems = JSON.parse(JSON.stringify(f.items));
-  openModal(`&#9998; Editar Factura ${f.numeroFactura}`, `
-    <div class="field"><label>Cliente</label><input type="text" id="efCliente" value="${(f.cliente||'').replace(/"/g,'&quot;')}"></div>
-    <div style="display:flex;gap:10px;">
-      <div class="field" style="flex:1;"><label>Fecha</label><input type="date" id="efFecha" value="${f.fecha}"></div>
-      <div class="field" style="flex:1;"><label>Estado</label>
-        <select id="efEstado">
-          <option value="Cancelado" ${f.estado==='Cancelado'?'selected':''}>Cancelado</option>
-          <option value="Pendiente" ${f.estado==='Pendiente'?'selected':''}>Pendiente</option>
-        </select></div>
-      <div class="field" style="flex:1;"><label>Tasa Bs/$</label><input type="number" step="0.01" id="efTasa" value="${f.tasaHistorica.toFixed(2)}" oninput="renderTablaEdicionItems()"></div>
-    </div>
-    <div class="table-wrap" style="max-height:200px;"><table>
-      <thead><tr><th>Producto</th><th>P. Unit ($)</th><th>Cant.</th><th>Subtotal ($)</th><th></th></tr></thead>
-      <tbody id="tablaEdicionItems"></tbody>
-    </table></div>
-    <div class="modal-actions" style="margin-top:16px;">
-      <button class="btn btn-primary" onclick="guardarEdicionFactura()">Guardar Cambios</button>
-    </div>
-  `);
-  renderTablaEdicionItems();
-}
-function renderTablaEdicionItems(){
-  const tbody = document.getElementById('tablaEdicionItems');
-  if(!tbody) return;
-  tbody.innerHTML = facturaEditItems.map((it,i)=>`
-    <tr><td>${it.nombre}</td><td>$${it.precioUnitarioUSD.toFixed(2)}</td><td>${it.cantidad}</td><td>$${it.subtotalUSD.toFixed(2)}</td>
-    <td class="row-actions"><button class="del" onclick="facturaEditItems.splice(${i},1);renderTablaEdicionItems();">&#10005;</button></td></tr>
-  `).join('');
-}
-function guardarEdicionFactura(){
-  const i = state.facturas.findIndex(f=>f.id==facturaEditId);
-  if(i===-1) return;
-  const cliente = document.getElementById('efCliente').value.trim();
-  const fecha = document.getElementById('efFecha').value;
-  const estado = document.getElementById('efEstado').value;
-  const tasa = parseFloat(document.getElementById('efTasa').value) || 0;
-  if(!cliente || !fecha){ alert('Completa los campos obligatorios.'); return; }
-  state.facturas[i] = { ...state.facturas[i], cliente, fecha, estado, items: [...facturaEditItems], tasaHistorica: tasa, totalBS: state.facturas[i].totalUSD * tasa };
-  closeModal(); saveState(); render();
 }
 
 // DEUDORES
@@ -980,14 +816,6 @@ function renderConfiguracion(){
     <h2>Respaldo de Datos</h2>
     <button class="btn btn-success" onclick="descargarRespaldo()">&#8595; Descargar Copia (.json)</button>
   </div>
-  <div class="card">
-    <h2>Modo Portátil USB</h2>
-    <div style="display:flex;gap:10px;">
-      <button class="btn btn-success" onclick="crearArchivoDatosUSB()">Crear en USB</button>
-      <button class="btn btn-outline" onclick="conectarArchivoDatosUSB()">Conectar de USB</button>
-    </div>
-    <div id="estadoArchivoUSB" style="font-size:12px;margin-top:8px;"></div>
-  </div>
   `;
 }
 function guardarDatosNegocio(){
@@ -1003,52 +831,53 @@ function descargarRespaldo(){
 }
 
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+
+// INICIALIZACIÓN INMEDIATA (EVITA PÁGINA EN BLANCO)
 loadState();
 </script>
 
-<!-- CÓDIGO COMPATIBLE CON FIREBASE 10 SIN FALLO DE MODULOS -->
+<!-- CARGA SEGURA DE FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
   (function() {
-    var firebaseConfig = {
-      apiKey: "AIzaSyBwJu1QVe_z2lRU-qXpajlozg5pIaaQdBk",
-      authDomain: "facturacion-may.firebaseapp.com",
-      projectId: "facturacion-may",
-      storageBucket: "facturacion-may.firebasestorage.app",
-      messagingSenderId: "206591286218",
-      appId: "1:206591286218:web:900d4fa57ce83b34b74d33"
-    };
+    try {
+      var firebaseConfig = {
+        apiKey: "AIzaSyBwJu1QVe_z2lRU-qXpajlozg5pIaaQdBk",
+        authDomain: "facturacion-may.firebaseapp.com",
+        projectId: "facturacion-may",
+        storageBucket: "facturacion-may.firebasestorage.app",
+        messagingSenderId: "206591286218",
+        appId: "1:206591286218:web:900d4fa57ce83b34b74d33"
+      };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    
-    var db = firebase.firestore();
-    var docRef = db.collection("sistema").doc("datosGenerales");
-
-    // Sincronización en tiempo real desde Firebase
-    docRef.onSnapshot(function(snapshot) {
-      if (snapshot.exists) {
-        var data = snapshot.data();
-        localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(data));
-        if (typeof state !== 'undefined' && typeof seedState === 'function') {
-          state = Object.assign(seedState(), data);
-          if (typeof render === 'function') render();
-        }
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
       }
-    }, function(error) {
-      console.error("Error al recibir desde Firebase:", error);
-    });
+      
+      var db = firebase.firestore();
+      var docRef = db.collection("sistema").doc("datosGenerales");
 
-    // Función para escribir cambios en Firebase
-    window.guardarEnNube = function(datos) {
-      docRef.set(datos).then(function() {
-        console.log("Guardado en la nube con éxito");
-      }).catch(function(error) {
-        console.error("Error al guardar en la nube:", error);
+      // Escuchador síncrono que actualiza en tiempo real solo cuando llegan datos válidos
+      docRef.onSnapshot(function(snapshot) {
+        if (snapshot.exists) {
+          var data = snapshot.data();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          state = Object.assign(seedState(), data);
+          render();
+        }
+      }, function(error) {
+        console.warn("Aviso: Firebase no sincronizó (revisa Reglas en la Consola):", error);
       });
-    };
+
+      window.guardarEnNube = function(datos) {
+        docRef.set(datos).catch(function(error) {
+          console.error("Error al guardar en Firebase:", error);
+        });
+      };
+    } catch(err) {
+      console.warn("Error al inicializar Firebase SDK:", err);
+    }
   })();
 </script>
 </body>
