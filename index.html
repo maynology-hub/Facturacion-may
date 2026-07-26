@@ -245,7 +245,7 @@ function seedState(){
   };
 }
 let state = seedState();
-let carritoActual = []; // temporal, no se persiste
+let carritoActual = []; // temporal, no se persiste (igual que el original)
 
 async function loadState(){
   try{
@@ -257,56 +257,26 @@ async function loadState(){
 }
 async function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e){ console.error('No se pudo guardar en el almacenamiento local', e); alert('No se pudo guardar. Verifica que...'); }
-  if(window.guardarEnNube){ await window.guardarEnNube(state); }
+  catch(e){ console.error('No se pudo guardar en el almacenamiento local', e); alert('No se pudo guardar. Verifica que el navegador no esté en modo privado/incógnito y que tenga espacio de almacenamiento disponible.'); }
   if(dataFileHandle){ await guardarEnArchivoUSB(); }
 }
 
-// Escuchar cambios provenientes de Firebase / Sync
-window.addEventListener('storage', () => {
-  try {
-    const dataNube = localStorage.getItem("datosSistema") || localStorage.getItem(STORAGE_KEY);
-    if(dataNube) {
-      state = Object.assign(seedState(), JSON.parse(dataNube));
-      render();
-    }
-  } catch(e) { console.error("Error reconectando storage event", e); }
-});
-
 // ============================================================
 // MODO PORTÁTIL: ARCHIVO DE DATOS EN USB (funciona sin internet)
+// Usa la File System Access API para leer/escribir un archivo real
+// en el USB, para poder usar el sistema desde 2+ computadores con
+// los mismos datos, sin depender del navegador de cada equipo.
+// Soportado en Chrome / Edge / Opera. No soportado en Firefox / Safari
+// (en esos casos usar el respaldo manual de la sección Configuración).
 // ============================================================
 let dataFileHandle = null;
 const FS_SUPPORTED = 'showOpenFilePicker' in window;
 
-function idbAbrir(){
-  return new Promise((resolve,reject)=>{
-    const req = indexedDB.open('sfd-handles-db', 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore('handles'); };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
 async function idbGuardarHandle(handle){
-  try{
-    const db = await idbAbrir();
-    await new Promise((res,rej)=>{
-      const tx = db.transaction('handles','readwrite');
-      tx.objectStore('handles').put(handle, 'archivoDatos');
-      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
-    });
-  }catch(e){ console.error('No se pudo recordar el archivo conectado', e); }
+  /* Operación omitida intencionalmente para compatibilidad con ejecutables locales */
 }
 async function idbLeerHandle(){
-  try{
-    const db = await idbAbrir();
-    return await new Promise((res,rej)=>{
-      const tx = db.transaction('handles','readonly');
-      const req = tx.objectStore('handles').get('archivoDatos');
-      req.onsuccess = () => res(req.result || null);
-      req.onerror = () => rej(req.error);
-    });
-  }catch(e){ return null; }
+  return null;
 }
 async function crearArchivoDatosUSB(){
   if(!FS_SUPPORTED){ alert('Tu navegador no soporta el Modo Portátil (usa Chrome o Edge). Mientras tanto, usa "Descargar Respaldo" y "Restaurar desde Respaldo" para mover los datos entre computadores.'); return; }
@@ -320,7 +290,7 @@ async function crearArchivoDatosUSB(){
     await guardarEnArchivoUSB();
     actualizarEstadoConexionArchivo();
     alert('Listo. Guarda ese archivo dentro de tu USB. Desde el otro computador, usa el botón "Conectar Archivo Existente" y selecciona ese mismo archivo.');
-  }catch(e){ /* selector cerrado */ }
+  }catch(e){ /* el usuario cerró el selector, no hacemos nada */ }
 }
 async function conectarArchivoDatosUSB(){
   if(!FS_SUPPORTED){ alert('Tu navegador no soporta el Modo Portátil (usa Chrome o Edge). Mientras tanto, usa "Descargar Respaldo" y "Restaurar desde Respaldo" para mover los datos entre computadores.'); return; }
@@ -336,7 +306,7 @@ async function conectarArchivoDatosUSB(){
       await guardarEnArchivoUSB();
     }
     actualizarEstadoConexionArchivo();
-  }catch(e){ /* selector cerrado */ }
+  }catch(e){ /* el usuario cerró el selector, no hacemos nada */ }
 }
 async function guardarEnArchivoUSB(){
   if(!dataFileHandle) return;
@@ -368,7 +338,7 @@ async function intentarReconectarArchivoUSB(){
   try{
     const perm = await handle.queryPermission({mode:'readwrite'});
     if(perm === 'granted'){ dataFileHandle = handle; actualizarEstadoConexionArchivo(); }
-  }catch(e){ /* no existe o no conectado */ }
+  }catch(e){ /* el archivo ya no existe o el USB no está conectado */ }
 }
 function actualizarEstadoConexionArchivo(){
   const el = document.getElementById('estadoArchivoUSB');
@@ -461,7 +431,7 @@ function egresosFiltrados(){
 }
 
 // ============================================================
-// MODAL GENÉRICO
+// MODAL GENÉRICO (para ver detalle de factura)
 // ============================================================
 function openModal(title, bodyHTML){
   document.getElementById('modalBox').innerHTML = `<h3>${title}</h3>${bodyHTML}<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Cerrar</button></div>`;
@@ -491,7 +461,7 @@ function actualizarMarca(){
 }
 
 // ------------------------------------------------------------
-// DASHBOARD
+// DASHBOARD (equivalente a las 4 tarjetas de resumen del original)
 // ------------------------------------------------------------
 function calcularEstadisticas(){
   const fF = facturasFiltradas();
@@ -535,13 +505,14 @@ function renderDashboard(){
 }
 
 // ------------------------------------------------------------
-// GANANCIAS POR PERIODO
+// GANANCIAS POR PERIODO (Hoy / Semana / Mes) — usa la tasa histórica
+// congelada de cada factura o egreso, NO la tasa de hoy.
 // ------------------------------------------------------------
 function pad2(n){ return String(n).padStart(2,'0'); }
 function dateToStr(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
 function inicioFinSemana(baseStr){
   const hoy = new Date((baseStr||hoyStr())+'T00:00:00');
-  const dow = hoy.getDay();
+  const dow = hoy.getDay(); // 0=domingo..6=sábado
   const diffLunes = dow===0 ? 6 : dow-1;
   const lunes = new Date(hoy); lunes.setDate(hoy.getDate()-diffLunes);
   const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
@@ -605,7 +576,7 @@ function renderReportes(){
 }
 
 // ------------------------------------------------------------
-// NUEVA FACTURA
+// NUEVA FACTURA - ESTILO PUNTO DE VENTA
 // ------------------------------------------------------------
 let facturaClienteTmp = '';
 function renderFactura(){
@@ -667,6 +638,10 @@ function toggleObsPendiente(){
   const w = document.getElementById('obsPendienteWrap');
   if(w) w.style.display = document.getElementById('vEstadoPago').value==='Pendiente' ? 'block' : 'none';
 }
+// ------------------------------------------------------------
+// COMBO BUSCABLE DE PRODUCTOS (escribir o elegir de la lista)
+// Se reutiliza con prefijo 'v' (Nueva Factura) y 'ef' (Editar Factura)
+// ------------------------------------------------------------
 function filtrarProductosCombo(prefix){
   const input = document.getElementById(prefix+'ProductoInput');
   const lista = document.getElementById(prefix+'ProductoLista');
@@ -713,6 +688,7 @@ function agregarItemAlCarrito(){
   let idSel = hidden.value;
   const cant = parseFloat(document.getElementById('vCantidad').value) || 0;
   const precioU = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
+  // Si escribió el nombre exacto sin hacer clic en la sugerencia, lo buscamos igual
   if(!idSel && input.value.trim()){
     const match = state.catalogo.find(p=>p.nombre.toLowerCase()===input.value.trim().toLowerCase());
     if(match) idSel = match.id;
@@ -812,7 +788,7 @@ function verDetalleFactura(id){
 }
 
 // ------------------------------------------------------------
-// RECIBO VISUAL
+// RECIBO VISUAL PARA EL CLIENTE (según la tasa ACTUAL del dólar)
 // ------------------------------------------------------------
 function generarReciboCliente(id){
   const f = state.facturas.find(x=>x.id==id);
@@ -868,7 +844,7 @@ function eliminarFactura(id){
 }
 
 // ------------------------------------------------------------
-// EDICIÓN DE FACTURA
+// EDICIÓN DE FACTURA (desde el Historial de Ventas)
 // ------------------------------------------------------------
 let facturaEditId = null;
 let facturaEditItems = [];
@@ -973,7 +949,7 @@ function guardarEdicionFactura(){
 }
 
 // ------------------------------------------------------------
-// DEUDORES
+// CUENTAS POR COBRAR (DEUDORES)
 // ------------------------------------------------------------
 function renderDeudores(){
   const pendientes = state.facturas.filter(f=>f.estado==='Pendiente');
@@ -1015,7 +991,7 @@ function cobrarDeuda(id){
 }
 
 // ------------------------------------------------------------
-// EGRESOS
+// EGRESOS / GASTOS
 // ------------------------------------------------------------
 function renderEgresos(){
   const lista = egresosFiltrados();
@@ -1069,7 +1045,7 @@ function eliminarEgreso(id){
 }
 
 // ------------------------------------------------------------
-// CATÁLOGO
+// CATÁLOGO DE PRECIOS (CRUD)
 // ------------------------------------------------------------
 let catalogoEditId = null;
 function renderCatalogo(){
@@ -1141,7 +1117,7 @@ function restaurarCatalogoBase(){
 }
 
 // ============================================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN (editar el programa por completo)
 // ============================================================
 function renderConfiguracion(){
   return `
@@ -1257,44 +1233,6 @@ function guardarEdicionAvanzada(){
 // ============================================================
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 loadState();
-</script>
-
-<!-- CONFIGURACIÓN E INTEGRACIÓN CON FIREBASE -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBwJu1QVe_z2lRU-qXpajlozg5pIaaQdBk",
-    authDomain: "facturacion-may.firebaseapp.com",
-    projectId: "facturacion-may",
-    storageBucket: "facturacion-may.firebasestorage.app",
-    messagingSenderId: "206591286218",
-    appId: "1:206591286218:web:900d4fa57ce83b34b74d33"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const docRef = doc(db, "sistema", "datosGenerales");
-
-  // Escuchar cambios en tiempo real desde la nube
-  onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      localStorage.setItem("datosSistema", JSON.stringify(data));
-      window.dispatchEvent(new Event("storage"));
-    }
-  });
-
-  // Función global para sincronizar datos
-  window.guardarEnNube = async function(datos) {
-    try {
-      await setDoc(docRef, datos);
-      console.log("Sincronizado con Firebase correctamente");
-    } catch (error) {
-      console.error("Error al sincronizar con Firebase:", error);
-    }
-  };
 </script>
 </body>
 </html>
