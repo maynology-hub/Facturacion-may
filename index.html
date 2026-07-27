@@ -469,6 +469,19 @@ function badgeEstado(e){
 function saldoFactura(f){
   return Math.max(0, (f.totalUSD||0) - (f.montoAbonadoUSD||0));
 }
+// Conversión bidireccional: escribes en $ y se calcula Bs, o escribes en Bs y se calcula $.
+// origen indica cuál de los dos campos acaba de editar el usuario.
+function sincronizarMoneda(idUSD, idBS, origen){
+  const elU = document.getElementById(idUSD), elB = document.getElementById(idBS);
+  if(!elU || !elB || !state.tasaActual) return;
+  if(origen==='usd'){
+    const usd = parseFloat(elU.value)||0;
+    elB.value = usd>0 ? (usd*state.tasaActual).toFixed(2) : '';
+  } else {
+    const bs = parseFloat(elB.value)||0;
+    elU.value = bs>0 ? (bs/state.tasaActual).toFixed(4) : '';
+  }
+}
 
 // NAVEGACIÓN
 const NAV = [
@@ -740,8 +753,12 @@ function renderFactura(){
           <option value="Pendiente">&#9203; Pendiente</option>
           <option value="Abonado">&#128176; Abonado (pago parcial)</option>
         </select></div>
-      <div class="field" id="montoAbonadoWrap" style="display:none;"><label>Monto abonado ahora ($)</label>
-        <input type="number" step="0.01" id="vMontoAbonado" placeholder="0.00" max="${totalUSD}"></div>
+      <div class="field" id="montoAbonadoWrap" style="display:none;">
+        <div style="display:flex;gap:10px;">
+          <div class="field" style="flex:1;margin-bottom:0;"><label>Abona ahora ($)</label><input type="number" step="0.01" id="vMontoAbonado" placeholder="0.00" max="${totalUSD}" oninput="sincronizarMoneda('vMontoAbonado','vMontoAbonadoBS','usd')"></div>
+          <div class="field" style="flex:1;margin-bottom:0;"><label>o en Bs</label><input type="number" step="0.01" id="vMontoAbonadoBS" placeholder="0.00" oninput="sincronizarMoneda('vMontoAbonado','vMontoAbonadoBS','bs')"></div>
+        </div>
+      </div>
       <div class="field" id="obsPendienteWrap" style="display:none;"><label>Observación</label>
         <textarea id="vObservacion" rows="2" style="background:rgba(255,255,255,.92);"></textarea></div>
 
@@ -1303,14 +1320,26 @@ function pedirAbono(facturaId, nombreCliente){
   const f = state.facturas.find(x=>x.id==facturaId);
   if(!f) return;
   const saldo = saldoFactura(f);
-  const montoStr = prompt(`Factura ${f.numeroFactura} — Saldo pendiente: ${fmtUSD(saldo)}\n¿Cuánto abona ahora? ($)`);
-  if(montoStr===null) return;
-  const monto = parseFloat(montoStr);
-  if(isNaN(monto) || monto<=0){ alert('Monto inválido.'); return; }
-  if(monto > saldo + 0.0001){ alert('El abono no puede ser mayor al saldo pendiente ('+fmtUSD(saldo)+').'); return; }
-  registrarAbono(facturaId, monto);
+  window._abonoCtx = { facturaId, nombreCliente, saldo };
+  openModal(`&#128176; Abonar — Factura ${f.numeroFactura}`, `
+    <div class="totales-box" style="margin-bottom:14px;"><div class="row"><span>Saldo pendiente:</span><span><b>${fmtUSD(saldo)}</b> (${fmtBs(saldo*state.tasaActual)})</span></div></div>
+    <div style="display:flex;gap:10px;">
+      <div class="field" style="flex:1;"><label>Abona en $</label><input type="number" step="0.01" id="abMontoUSD" placeholder="0.00" oninput="sincronizarMoneda('abMontoUSD','abMontoBS','usd')"></div>
+      <div class="field" style="flex:1;"><label>o en Bs (tasa hoy: ${state.tasaActual.toFixed(2)})</label><input type="number" step="0.01" id="abMontoBS" placeholder="0.00" oninput="sincronizarMoneda('abMontoUSD','abMontoBS','bs')"></div>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="confirmarAbono()">Registrar Abono</button>
+  `);
+}
+function confirmarAbono(){
+  const ctx = window._abonoCtx;
+  if(!ctx) return;
+  const monto = parseFloat(document.getElementById('abMontoUSD').value) || 0;
+  if(monto<=0){ alert('Ingresa un monto válido.'); return; }
+  if(monto > ctx.saldo + 0.0001){ alert('El abono no puede ser mayor al saldo pendiente ('+fmtUSD(ctx.saldo)+').'); return; }
+  registrarAbono(ctx.facturaId, monto);
   render();
-  if(nombreCliente) abrirGestionDeudaCliente(nombreCliente);
+  if(ctx.nombreCliente) abrirGestionDeudaCliente(ctx.nombreCliente);
+  else closeModal();
 }
 
 function registrarAbono(facturaId, montoUSD){
@@ -1372,8 +1401,10 @@ function renderEgresos(){
     <div class="card">
       <h2>Registrar Gasto</h2>
       <div class="field"><label>Concepto</label><input type="text" id="eConcepto" placeholder="Ej: Hojas Papel"></div>
-      <div class="field"><label>Monto ($)</label><input type="number" step="0.01" id="eMontoUSD" placeholder="0.00" oninput="document.getElementById('lblEgresoBS').textContent = fmtBs((parseFloat(this.value)||0)*state.tasaActual)"></div>
-      <div class="totales-box"><div style="font-weight:700;color:#C2536B;" id="lblEgresoBS">0.00 Bs</div></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>Monto ($)</label><input type="number" step="0.01" id="eMontoUSD" placeholder="0.00" oninput="sincronizarMoneda('eMontoUSD','eMontoBS','usd')"></div>
+        <div class="field" style="flex:1;"><label>o en Bs</label><input type="number" step="0.01" id="eMontoBS" placeholder="0.00" oninput="sincronizarMoneda('eMontoUSD','eMontoBS','bs')"></div>
+      </div>
       <button class="btn btn-danger btn-block" style="margin-top:12px;" onclick="registrarEgreso()">Guardar Egreso</button>
     </div>
     <div class="card">
@@ -1411,7 +1442,10 @@ function renderCatalogo(){
     <div class="card">
       <h2 id="tituloFormCatalogo">+ Nuevo Producto / Servicio</h2>
       <div class="field"><label>Nombre</label><input type="text" id="cNombre"></div>
-      <div class="field"><label>Precio USD ($)</label><input type="number" step="0.0001" id="cPrecioUSD"></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>Precio ($)</label><input type="number" step="0.0001" id="cPrecioUSD" oninput="sincronizarMoneda('cPrecioUSD','cPrecioBS','usd')"></div>
+        <div class="field" style="flex:1;"><label>o en Bs (tasa hoy: ${state.tasaActual.toFixed(2)})</label><input type="number" step="0.01" id="cPrecioBS" oninput="sincronizarMoneda('cPrecioUSD','cPrecioBS','bs')"></div>
+      </div>
       <button class="btn btn-primary" id="btnGuardarCatalogo" onclick="guardarProductoCatalogo()">Guardar Producto</button>
     </div>
     <div class="card">
@@ -1445,6 +1479,7 @@ function prepararEdicionCatalogo(id){
   catalogoEditId = id; render();
   document.getElementById('cNombre').value = prod.nombre;
   document.getElementById('cPrecioUSD').value = prod.precioUSD;
+  document.getElementById('cPrecioBS').value = (prod.precioUSD*state.tasaActual).toFixed(2);
 }
 function eliminarProductoCatalogo(id){
   if(confirm('¿Eliminar del catálogo?')){ state.catalogo = state.catalogo.filter(p=>p.id!==id); saveState(); render(); }
