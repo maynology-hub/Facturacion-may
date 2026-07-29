@@ -31,6 +31,13 @@
   --verde-bg:#DEF3E7;
   --verde-txt:#2E6B4E;
   --borde:#E9E2CD;
+  --morado:#3E7D5C;
+  --morado-fuerte:#2E6B4E;
+  --morado-claro:#E4F1E9;
+  --dorado:#C9932E;
+  --dorado-claro:#F6EBD6;
+  --lila-icono:#3E7D5C;
+  --lila-claro:#E4F1E9;
   --font: 'Nunito', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
   --font-title: 'Quicksand', var(--font);
 }
@@ -40,48 +47,57 @@ body{margin:0;font-family:var(--font);background:var(--crema);color:#41504A;}
 
 /* ---------- SIDEBAR ---------- */
 .sidebar{
-  width:235px;flex-shrink:0;background:linear-gradient(180deg,var(--verde-osc),#1F4F38);
+  width:250px;flex-shrink:0;background:linear-gradient(180deg,var(--verde-osc),#173D2C);
   color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
 }
-.sidebar .brand{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.16);}
-.sidebar .brand .name{font-family:var(--font-title);font-weight:700;font-size:17px;letter-spacing:.3px;}
-.sidebar .brand .tag{font-size:11px;color:#CDEEDD;margin-top:4px;}
-.sidebar nav{flex:1;padding:12px 0;}
+.sidebar .brand{padding:22px 18px 18px;display:flex;align-items:center;gap:12px;}
+.sidebar .brand .logo-box{width:42px;height:42px;flex-shrink:0;border-radius:13px;background:linear-gradient(160deg,var(--dorado),#D98A22);
+  display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 10px rgba(0,0,0,.18);}
+.sidebar .brand .name{font-family:var(--font-title);font-weight:700;font-size:16.5px;letter-spacing:.2px;line-height:1.2;}
+.sidebar .brand .tag{font-size:11px;color:var(--dorado);font-weight:700;margin-top:2px;}
+.sidebar nav{flex:1;padding:8px 14px;}
 .sidebar button.navbtn{
-  display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;
-  color:#E4F2E7;padding:11px 20px;font-size:13.5px;cursor:pointer;border-left:3px solid transparent;
-  transition:background .15s;font-family:var(--font);
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;
+  color:#CDEEDD;padding:11px 14px;font-size:13.3px;cursor:pointer;border-radius:13px;margin-bottom:4px;
+  transition:background .15s,color .15s;font-family:var(--font);font-weight:600;
 }
-.sidebar button.navbtn:hover{background:rgba(255,255,255,.10);color:#fff;}
-.sidebar button.navbtn.active{background:rgba(255,255,255,.16);color:#fff;border-left:3px solid var(--rosa);font-weight:700;}
-.sidebar .icon{width:18px;text-align:center;font-size:14px;}
-.sidebar .foot{padding:16px 20px;font-size:10.5px;color:#BFE0C9;border-top:1px solid rgba(255,255,255,.14);}
+.sidebar button.navbtn:hover{background:rgba(255,255,255,.08);color:#fff;}
+.sidebar button.navbtn.active{background:linear-gradient(135deg,var(--verde-fuerte),#3E9E71);color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.16);}
+.sidebar .icon{width:20px;text-align:center;font-size:15px;flex-shrink:0;}
 
 /* ---------- MAIN ---------- */
 main{flex:1;padding:22px 30px 60px;max-width:1360px;}
+.topbar-status-row{display:flex;justify-content:flex-end;margin-bottom:10px;}
+.nube-mini{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--borde);
+  border-radius:20px;padding:5px 13px;font-size:11.5px;box-shadow:0 1px 4px rgba(140,170,150,.08);}
 .topbar{
-  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
-  background:#fff;border:1px solid var(--borde);border-radius:16px;padding:14px 20px;margin-bottom:18px;
-  box-shadow:0 2px 10px rgba(140,170,150,.08);
+  display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin-bottom:20px;
 }
-.topbar .grp{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--gris-txt);}
-.topbar .grp label{font-weight:700;white-space:nowrap;}
+.tbcard{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:14px 20px;
+  box-shadow:0 2px 10px rgba(140,170,150,.08);display:flex;align-items:center;gap:14px;flex:1;min-width:220px;}
+.tb-ic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tb-ic.dorado{background:var(--dorado-claro);}
+.tb-ic.morado{background:var(--morado-claro);}
+.tb-ic.lila{background:var(--lila-claro);}
+.tb-body{flex:1;}
+.tb-body label{display:block;font-weight:700;font-size:12.5px;color:var(--gris-txt);margin-bottom:4px;white-space:nowrap;}
 .topbar input{padding:7px 10px;border:1px solid var(--borde);border-radius:10px;font-size:13px;background:var(--rosa-claro);font-family:var(--font);}
-.topbar input#tasaDolar{width:110px;text-align:right;font-weight:700;color:var(--verde-osc);}
-.nube-grp{background:var(--rosa-claro);padding:6px 12px;border-radius:10px;cursor:default;}
-.nube-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#9aa0a6;flex-shrink:0;}
-.nube-dot.conectado{background:#2FA35C;box-shadow:0 0 0 3px rgba(47,163,92,.18);}
+.topbar input#tasaDolar{width:100%;font-weight:700;font-family:var(--font-title);font-size:21px;color:var(--verde-osc);border:none;background:transparent;padding:0;}
+.nube-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#9aa0a6;flex-shrink:0;}
+.nube-dot.conectado{background:#2FA35C;box-shadow:0 0 0 2px rgba(47,163,92,.18);}
 .nube-dot.local{background:#B0B0B0;}
-.nube-dot.error{background:#D9534F;box-shadow:0 0 0 3px rgba(217,83,79,.18);}
+.nube-dot.error{background:#D9534F;box-shadow:0 0 0 2px rgba(217,83,79,.18);}
 .nube-dot.verificando{background:#E0A83E;animation:parpadeo 1.2s infinite;}
 @keyframes parpadeo{0%,100%{opacity:1;}50%{opacity:.35;}}
-.nube-txt{font-weight:700;font-size:11.5px;}
-.topbar input#filtroFecha{width:150px;}
-.topbar input#filtroMes{width:140px;}
+.nube-txt{font-weight:700;font-size:11.5px;color:var(--gris-txt);}
+.topbar input#filtroFecha{width:130px;}
+.topbar input#filtroMes{width:120px;}
 
 .pagehead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-.pagehead h1{font-family:var(--font-title);font-size:22px;margin:0;color:var(--verde-osc);}
-.pagehead .sub{font-size:12.5px;color:var(--gris);margin-top:3px;}
+.pagehead h1{font-family:var(--font-title);font-size:24px;margin:0;color:#233A2E;font-weight:700;}
+.pagehead .sub{font-size:13px;color:var(--gris);margin-top:3px;}
+.pagehead-ic-title{display:flex;align-items:center;gap:16px;}
+.pagehead-ic{width:52px;height:52px;border-radius:16px;background:var(--verde-claro);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
 
 .card{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(140,170,150,.08);}
 .card h2{font-family:var(--font-title);font-size:14.5px;margin:0 0 14px;color:var(--verde-osc);letter-spacing:.2px;}
@@ -120,7 +136,6 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .btn:hover{filter:brightness(1.05);}
 .btn:active{transform:scale(.98);}
 .btn-primary{background:var(--verde-osc);color:#fff;}
-.btn-accent{background:var(--rosa);color:#6B2D3E;}
 .btn-outline{background:#fff;color:var(--verde-osc);border:1.5px solid var(--verde);}
 .btn-danger{background:var(--rojo-bg);color:var(--rojo-txt);}
 .btn-success{background:var(--verde-bg);color:var(--verde-txt);}
@@ -161,6 +176,12 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .notice{background:var(--rosa-claro);color:#8A4A5C;border-radius:14px;padding:12px 16px;font-size:12.5px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
 .notice b{white-space:nowrap;}
 .empty{padding:30px;text-align:center;color:var(--gris);font-size:13px;}
+.empty-cart{padding:44px 20px;text-align:center;}
+.empty-cart-ic{font-size:15px;margin-bottom:14px;position:relative;display:inline-block;}
+.empty-cart-ic span{font-size:40px;display:block;}
+.empty-cart b{display:block;font-family:var(--font-title);font-size:16.5px;color:#233A2E;margin-bottom:5px;}
+.empty-cart span.cta{font-size:12.5px;color:var(--gris);}
+.empty-cart > span:last-child{font-size:12.5px;color:var(--gris);}
 
 .two-col{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;align-items:start;}
 @media (max-width:900px){ .two-col{grid-template-columns:1fr;} }
@@ -183,22 +204,23 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 .pos-cliente{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
 .pos-cliente label{font-family:var(--font-title);font-weight:700;color:var(--verde-osc);font-size:13.5px;white-space:nowrap;}
 .pos-cliente input{flex:1;min-width:220px;padding:11px 14px;border:1.5px solid var(--verde);border-radius:12px;font-size:14px;background:var(--verde-claro);font-family:var(--font);}
-.pos-entry{display:grid;grid-template-columns:2fr 1fr 1fr 90px;gap:10px;align-items:end;background:var(--rosa-claro);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+.pos-entry{display:grid;grid-template-columns:2fr 1fr 1fr 90px;gap:10px;align-items:end;background:var(--verde-claro);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
 .pos-entry .field{margin-bottom:0;}
 .pos-entry .addbtn{background:var(--verde-osc);color:#fff;border:none;border-radius:12px;height:38px;font-weight:700;cursor:pointer;font-size:13px;}
 .pos-entry .addbtn:hover{filter:brightness(1.08);}
 .pos-items thead th{background:var(--verde-osc);color:#fff;}
 .pos-items tbody tr.destacado{background:var(--verde-claro);}
-.pos-side{background:linear-gradient(160deg,var(--verde-osc),#1F4F38);border-radius:18px;padding:20px;color:#fff;position:sticky;top:20px;}
-.pos-side .doc{font-size:11px;color:#CFE9D6;letter-spacing:.5px;margin-bottom:14px;}
-.pos-side .doc b{color:#fff;font-family:var(--font-title);font-size:14px;}
-.pos-side .total-lbl{font-size:11px;color:#CFE9D6;letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;}
-.pos-side .total-bs{font-family:var(--font-title);font-size:34px;font-weight:700;color:#fff;background:rgba(0,0,0,.18);border-radius:14px;padding:16px 14px;text-align:center;margin-bottom:12px;}
-.pos-side .total-usd{background:rgba(255,255,255,.14);border-radius:12px;padding:10px 14px;text-align:center;font-size:15px;font-weight:700;margin-bottom:16px;}
-.pos-side .mini-row{display:flex;justify-content:space-between;font-size:12px;color:#DCEFE0;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.12);}
-.pos-side select,.pos-side .field select{background:rgba(255,255,255,.92);}
-.pos-side .field label{color:#DCEFE0;}
+.pos-side{background:#fff;border:1px solid var(--borde);box-shadow:0 2px 10px rgba(140,170,150,.08);border-radius:18px;padding:20px;position:sticky;top:20px;}
+.pos-side .doc{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--gris);letter-spacing:.3px;margin-bottom:16px;}
+.pos-side .doc-ic{width:34px;height:34px;border-radius:10px;background:var(--morado-claro);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.pos-side .doc b{color:#233A2E;font-family:var(--font-title);font-size:14px;}
+.pos-side .total-lbl{font-size:11px;color:var(--gris-txt);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;font-weight:700;}
+.pos-side .total-bs{font-family:var(--font-title);font-size:32px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--verde-osc),var(--verde-fuerte));border-radius:14px;padding:16px 14px;text-align:center;margin-bottom:10px;}
+.pos-side .total-usd{background:var(--verde-claro);color:var(--verde-txt);border-radius:12px;padding:10px 14px;text-align:center;font-size:16px;font-weight:700;margin-bottom:16px;}
+.pos-side .mini-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--gris-txt);padding:6px 0;border-bottom:1px solid var(--borde);}
+.pos-side .field label{color:var(--gris-txt);}
 .pos-side .btn-block{margin-top:8px;}
+.btn-accent{background:linear-gradient(135deg,var(--dorado),#B37F26);color:#fff;box-shadow:0 4px 12px rgba(201,147,46,.3);}
 
 /* ---------- RESPONSIVE / MÓVIL ---------- */
 .hamburger{display:none;position:fixed;top:14px;left:14px;z-index:70;background:var(--verde-osc);color:#fff;
@@ -232,11 +254,11 @@ tbody tr:nth-child(even):hover{background:var(--verde-claro);}
 <div id="app">
   <aside class="sidebar" id="sidebarMain">
     <div class="brand">
-      <div class="name" id="brandName">&#127807; Sistema Comercial</div>
-      <div class="tag" id="brandTag">Facturación &amp; Deudores</div>
+      <div class="logo-box">&#128179;</div>
+      <div><div class="name" id="brandName">Facturación May</div>
+      <div class="tag" id="brandTag">Facturación &amp; Deudores</div></div>
     </div>
     <nav id="navList"></nav>
-    <div class="foot">Multimoneda &middot; Tasa histórica congelada por factura</div>
   </aside>
   <main id="content"></main>
 </div>
@@ -512,18 +534,33 @@ function cerrarMenuMovil(){
 
 function topbarHTML(){
   return `
-  <div class="topbar">
-    <div class="grp nube-grp" id="nubeIndicadorWrap" title="${textoEstadoNube(estadoNube)}">
+  <div class="topbar-status-row">
+    <div class="nube-mini" id="nubeIndicadorWrap" title="${textoEstadoNube(estadoNube)}">
       <span class="nube-dot ${estadoNube}"></span><span class="nube-txt">${textoEstadoNube(estadoNube)}</span>
     </div>
-    <div class="grp"><label><i>&#128176;</i> Tasa del Día (Bs/$):</label>
-      <input type="number" step="0.01" id="tasaDolar" value="${state.tasaActual.toFixed(2)}" onchange="actualizarTasa()"></div>
-    <div class="grp"><label>Fecha de Consulta:</label>
-      <input type="date" id="filtroFecha" value="${state.filtroFecha}" onchange="filtrarPorFecha()">
-      <button class="btn btn-outline btn-sm" onclick="establecerFechaHoy()">Hoy</button></div>
-    <div class="grp"><label>Filtrar por Mes:</label>
-      <input type="month" id="filtroMes" value="${state.filtroMes}" onchange="filtrarPorMes()">
-      <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosFechas()">Ver Todo</button></div>
+  </div>
+  <div class="topbar">
+    <div class="tbcard">
+      <div class="tb-ic dorado">&#128176;</div>
+      <div class="tb-body"><label>Tasa del Día (Bs/$):</label>
+        <input type="number" step="0.01" id="tasaDolar" value="${state.tasaActual.toFixed(2)}" onchange="actualizarTasa()"></div>
+    </div>
+    <div class="tbcard">
+      <div class="tb-ic morado">&#128197;</div>
+      <div class="tb-body"><label>Fecha de Consulta:</label>
+        <div style="display:flex;gap:6px;">
+          <input type="date" id="filtroFecha" value="${state.filtroFecha}" onchange="filtrarPorFecha()">
+          <button class="btn btn-outline btn-sm" onclick="establecerFechaHoy()">Hoy</button>
+        </div></div>
+    </div>
+    <div class="tbcard">
+      <div class="tb-ic lila">&#128198;</div>
+      <div class="tb-body"><label>Filtrar por Mes:</label>
+        <div style="display:flex;gap:6px;">
+          <input type="month" id="filtroMes" value="${state.filtroMes}" onchange="filtrarPorMes()">
+          <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosFechas()">Ver Todo</button>
+        </div></div>
+    </div>
   </div>`;
 }
 // Estado de la sincronización con la nube: 'verificando' | 'conectado' | 'local' | 'error'
@@ -706,7 +743,12 @@ function renderFactura(){
   const cantItems = carritoActual.reduce((s,it)=>s+Number(it.cantidad),0);
   const docNum = 'FAC-'+String(state.contadorFactura).padStart(4,'0');
   return `
-  <div class="pagehead"><div><h1>&#127807; Nueva Factura</h1></div></div>
+  <div class="pagehead">
+    <div class="pagehead-ic-title">
+      <div class="pagehead-ic">&#128221;</div>
+      <div><h1>Nueva Factura</h1><div class="sub">Crea una nueva factura de forma rápida y fácil</div></div>
+    </div>
+  </div>
   <div class="pos-wrap">
     <div class="pos-main">
       <div class="pos-cliente autocomplete-wrap" style="flex:1;">
@@ -740,7 +782,7 @@ function renderFactura(){
     </div>
 
     <div class="pos-side">
-      <div class="doc">DOC. N° <b>${docNum}</b><br>${fmtDatePretty(state.filtroFecha || hoyStr())}</div>
+      <div class="doc"><span class="doc-ic">&#128221;</span><div>DOC. N° <b>${docNum}</b><br>${fmtDatePretty(state.filtroFecha || hoyStr())}</div></div>
       <div class="total-lbl">Total a Cobrar</div>
       <div class="total-bs" id="lblTotalFacturaBS">${fmtBs(totalUSD*state.tasaActual)}</div>
       <div class="total-usd" id="lblTotalFacturaUSD">${fmtUSD(totalUSD)}</div>
@@ -760,9 +802,9 @@ function renderFactura(){
         </div>
       </div>
       <div class="field" id="obsPendienteWrap" style="display:none;"><label>Observación</label>
-        <textarea id="vObservacion" rows="2" style="background:rgba(255,255,255,.92);"></textarea></div>
+        <textarea id="vObservacion" rows="2"></textarea></div>
 
-      <button class="btn btn-accent btn-block" onclick="procesarFactura()">&#10003; Procesar Factura</button>
+      <button class="btn btn-accent btn-block" onclick="procesarFactura()">&#128221; Procesar Factura</button>
     </div>
   </div>
   `;
@@ -848,7 +890,10 @@ function renderCarritoTabla(){
     <tr class="${i===carritoActual.length-1?'destacado':''}"><td>${it.nombre}</td><td>$${it.precioUnitarioUSD.toFixed(2)}</td><td>${it.cantidad}</td>
     <td><b>$${it.subtotalUSD.toFixed(2)}</b></td><td>${fmtBs(it.subtotalUSD*state.tasaActual)}</td>
     <td class="row-actions"><button class="del" onclick="quitarItemCarrito(${i})">&#10005;</button></td></tr>
-  `).join('') : `<tr><td colspan="6" class="empty">Factura vacía.</td></tr>`;
+  `).join('') : `<tr><td colspan="6" style="padding:0;border-bottom:none;"><div class="empty-cart">
+    <div class="empty-cart-ic">&#10024;<span>&#128230;</span>&#10024;</div>
+    <b>Tu factura está vacía</b><span>Agrega productos o servicios para comenzar</span>
+  </div></td></tr>`;
 }
 function renderTotalesFactura(){
   const totalUSD = carritoActual.reduce((s,it)=>s+it.subtotalUSD,0);
@@ -1034,6 +1079,46 @@ function copiarMensajeRecibo(id){
   const f = state.facturas.find(x=>x.id==id);
   if(!f) return;
   const msg = `🖨️ *${state.negocioNombre||'Sistema Comercial'}*\nFactura ${f.numeroFactura} - ${fmtDatePretty(f.fecha)}\nCliente: ${f.cliente}\n\n${f.items.map(i=>`• ${i.cantidad}x ${i.nombre} - $${i.subtotalUSD.toFixed(2)}`).join('\n')}\n\n💵 Total: ${fmtUSD(f.totalUSD)}\n💚 Equivalente hoy: ${fmtBs(f.totalUSD * state.tasaActual)}`;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg).then(()=>alert('¡Copiado!')).catch(()=>prompt('Copia manualmente:', msg));
+  } else { prompt('Copia manualmente:', msg); }
+}
+
+// Resumen de cuenta completo: TODAS las facturas pendientes/abonadas de un cliente,
+// una debajo de otra (con fecha y detalle de items) + el total acumulado al final.
+function verResumenCuentaCliente(nombreCliente){
+  const facturas = facturasPendientesCliente(nombreCliente);
+  if(!facturas.length){ alert('Este cliente no tiene cuentas pendientes.'); return; }
+  const totalUSD = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+  openModal(`&#128424;&#65039; Resumen de Cuenta — ${nombreCliente}`, `
+    <div class="recibo-card">
+      <div class="recibo-brand">${state.negocioNombre||'Sistema Comercial'}</div>
+      <div class="recibo-cliente">&#128100; <b>Cliente:</b> ${nombreCliente} <small style="color:var(--gris);">(${facturas.length} crédito${facturas.length>1?'s':''})</small></div>
+      ${facturas.map(f=>`
+        <div class="recibo-dashed"></div>
+        <div class="recibo-doc">Factura ${f.numeroFactura} - ${fmtDatePretty(f.fecha)}</div>
+        <div class="recibo-items">${f.items.map(i=>`<div class="recibo-item"><span>${i.cantidad}x ${i.nombre}</span><span>$${i.subtotalUSD.toFixed(2)}</span></div>`).join('')}</div>
+        <div class="recibo-item" style="margin-top:4px;"><span>&#128181; Saldo de esta factura:</span><span><b>${fmtUSD(saldoFactura(f))}</b></span></div>
+      `).join('')}
+      <div class="recibo-dashed"></div>
+      <div class="recibo-total-lbl">TOTAL ACUMULADO</div>
+      <div class="recibo-total-usd">${fmtUSD(totalUSD)}</div><br>
+      <span class="recibo-total-bs">${fmtBs(totalUSD*state.tasaActual)}</span>
+      <div class="recibo-tasa">Tasa de hoy: ${state.tasaActual.toFixed(2)} Bs/$</div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary btn-block" onclick="copiarResumenCuentaCliente('${nombreCliente.replace(/'/g,"\\'")}')">&#128203; Copiar para WhatsApp</button>
+    </div>
+  `);
+}
+function copiarResumenCuentaCliente(nombreCliente){
+  const facturas = facturasPendientesCliente(nombreCliente);
+  if(!facturas.length) return;
+  const totalUSD = facturas.reduce((s,f)=>s+saldoFactura(f),0);
+  const bloques = facturas.map(f =>
+    `Factura ${f.numeroFactura} - ${fmtDatePretty(f.fecha)}\nCliente: ${nombreCliente}\n${f.items.map(i=>`• ${i.cantidad}x ${i.nombre} - $${i.subtotalUSD.toFixed(2)}`).join('\n')}\n💵 Total: $${saldoFactura(f).toFixed(2)}\n💚 Equivalente hoy: ${fmtBs(saldoFactura(f)*state.tasaActual)}`
+  ).join('\n\n➖➖➖➖➖➖➖➖\n\n');
+  const msg = `🖨️ *${state.negocioNombre||'Sistema Comercial'}*\n\n${bloques}\n\n➖➖➖➖➖➖➖➖\n📊 *TOTAL ACUMULADO*\n💵 $${totalUSD.toFixed(2)}\n💚 ${fmtBs(totalUSD*state.tasaActual)} (tasa hoy: ${state.tasaActual.toFixed(2)} Bs/$)`;
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(msg).then(()=>alert('¡Copiado!')).catch(()=>prompt('Copia manualmente:', msg));
   } else { prompt('Copia manualmente:', msg); }
@@ -1281,6 +1366,7 @@ function renderDeudores(){
       <td><b>${fmtUSD(g.totalUSD)}</b></td><td style="color:var(--rojo-txt);"><b>${fmtBs(g.totalUSD*state.tasaActual)}</b></td>
       <td class="row-actions">
         <button class="btn btn-outline btn-sm" onclick="abrirGestionDeudaCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128203; Gestionar</button>
+        <button class="btn btn-outline btn-sm" onclick="verResumenCuentaCliente('${g.cliente.replace(/'/g,"\\'")}')" title="Ver resumen completo con todos los detalles">&#128424;&#65039; Resumen</button>
         <button class="btn btn-outline btn-sm" onclick="recordarDeudaWhatsApp('${g.cliente.replace(/'/g,"\\'")}')" title="Recordar por WhatsApp">&#128241;</button>
         <button class="btn btn-success btn-sm" onclick="cobrarTodoCliente('${g.cliente.replace(/'/g,"\\'")}')">&#128176; Cobrar Todo</button>
       </td></tr>`;
@@ -1313,6 +1399,7 @@ function abrirGestionDeudaCliente(nombreCliente){
     <div class="totales-box" style="margin-top:12px;">
       <div class="row"><span>TOTAL ADEUDADO:</span><span><b>${fmtUSD(totalUSD)}</b></span></div>
     </div>
+    <button class="btn btn-outline btn-block" style="margin-top:12px;" onclick="verResumenCuentaCliente('${nombreCliente.replace(/'/g,"\\'")}')">&#128424;&#65039; Ver Resumen Completo (para WhatsApp)</button>
   `);
 }
 
