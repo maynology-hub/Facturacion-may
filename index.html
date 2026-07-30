@@ -950,9 +950,9 @@ function procesarFactura(){
 
 // HISTORIAL DE VENTAS
 function facturasHistorialFiltradas(){
-  // Si hay texto de búsqueda, se busca en TODO el historial (ignora el filtro de fecha),
-  // porque el objetivo de buscar es encontrar algo aunque no sepas la fecha exacta.
-  let lista = state.filtroTextoHistorial ? state.facturas.slice() : facturasFiltradas();
+  // El Historial es un libro completo: NO se limita al día de "Fecha de Consulta" (eso es
+  // solo para el Dashboard). Aquí sí respeta "Filtrar por Mes" si el usuario lo usa.
+  let lista = state.filtroMes ? state.facturas.filter(f=>f.fecha.startsWith(state.filtroMes)) : state.facturas.slice();
   const q = (state.filtroTextoHistorial||'').trim().toLowerCase();
   if(q){
     lista = lista.filter(f =>
@@ -966,7 +966,13 @@ function facturasHistorialFiltradas(){
   }
   return lista;
 }
-function actualizarBusquedaHistorial(){ state.filtroTextoHistorial = document.getElementById('histBuscar').value; render(); document.getElementById('histBuscar').focus(); document.getElementById('histBuscar').value=state.filtroTextoHistorial; }
+function actualizarBusquedaHistorial(){
+  state.filtroTextoHistorial = document.getElementById('histBuscar').value;
+  render();
+  const input = document.getElementById('histBuscar');
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length); // cursor al final, no al principio
+}
 function actualizarEstadoHistorial(){ state.filtroEstadoHistorial = document.getElementById('histEstado').value; render(); }
 function limpiarFiltrosHistorial(){ state.filtroTextoHistorial=''; state.filtroEstadoHistorial=''; render(); }
 
@@ -1001,7 +1007,7 @@ function renderHistorial(){
         </select></div>
       <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorial()">Limpiar</button>
     </div>
-    ${state.filtroTextoHistorial ? `<div class="notice" style="margin:12px 0 0;">&#128269; Buscando en todo el historial (se ignora el filtro de fecha de arriba).</div>` : ''}
+    <div class="notice" style="margin:12px 0 0;">&#8505;&#65039; El Historial muestra todas las fechas (no depende de "Fecha de Consulta" de arriba). Usa "Filtrar por Mes" o el buscador si quieres acotarlo.</div>
   </div>
   <div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Cliente</th><th>N° Factura</th><th>Fecha</th><th>Detalle</th><th>Total ($)</th><th>Tasa</th><th>Total (Bs)</th><th>Estado</th><th></th></tr></thead>
