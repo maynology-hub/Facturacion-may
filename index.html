@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema de Facturación, Deudores y Catálogo</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -58,12 +59,17 @@ body{margin:0;font-family:var(--font);background:var(--crema);color:#41504A;}
 .sidebar nav{flex:1;padding:8px 14px;}
 .sidebar button.navbtn{
   display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;
-  color:#CDEEDD;padding:11px 14px;font-size:13.3px;cursor:pointer;border-radius:13px;margin-bottom:4px;
+  color:#DCC9EE;padding:9px 14px;font-size:13.3px;cursor:pointer;border-radius:13px;margin-bottom:4px;
   transition:background .15s,color .15s;font-family:var(--font);font-weight:600;
 }
 .sidebar button.navbtn:hover{background:rgba(255,255,255,.08);color:#fff;}
 .sidebar button.navbtn.active{background:linear-gradient(135deg,var(--morado),var(--morado-fuerte));color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.16);}
-.sidebar .icon{width:20px;text-align:center;font-size:15px;flex-shrink:0;}
+.sidebar .icon-circle{
+  width:31px;height:31px;border-radius:50%;background:rgba(255,255,255,.13);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;
+}
+.sidebar button.navbtn.active .icon-circle{background:rgba(255,255,255,.24);}
+.sidebar .icon{font-size:14px;line-height:1;}
 
 /* ---------- MAIN ---------- */
 main{flex:1;padding:22px 30px 60px;max-width:1360px;}
@@ -520,7 +526,7 @@ function sincronizarMoneda(idUSD, idBS, origen){
 
 // NAVEGACIÓN
 const NAV = [
-  {id:'dashboard', label:'Resumen', icon:'&#9635;'},
+  {id:'dashboard', label:'Resumen', icon:'&#128214;'},
   {id:'reportes', label:'Ganancias', icon:'&#128200;'},
   {id:'factura', label:'Nueva Factura', icon:'&#128722;'},
   {id:'historial', label:'Historial de Ventas', icon:'&#128337;'},
@@ -532,7 +538,7 @@ const NAV = [
 ];
 function renderNav(){
   document.getElementById('navList').innerHTML = NAV.map(n=>
-    `<button class="navbtn ${state.currentView===n.id?'active':''}" onclick="goTo('${n.id}')"><span class="icon">${n.icon}</span>${n.label}</button>`
+    `<button class="navbtn ${state.currentView===n.id?'active':''}" onclick="goTo('${n.id}')"><span class="icon-circle"><span class="icon">${n.icon}</span></span>${n.label}</button>`
   ).join('');
 }
 function goTo(id){ state.currentView=id; render(); cerrarMenuMovil(); }
@@ -756,6 +762,7 @@ function renderFactura(){
   const totalUSD = carritoActual.reduce((s,it)=>s+it.subtotalUSD,0);
   const cantItems = carritoActual.reduce((s,it)=>s+Number(it.cantidad),0);
   const docNum = 'FAC-'+String(state.contadorFactura).padStart(4,'0');
+  const fechaFacturaActual = state.filtroFecha || hoyStr();
   return `
   <div class="pagehead">
     <div class="pagehead-ic-title">
@@ -763,6 +770,11 @@ function renderFactura(){
       <div><h1>Nueva Factura</h1><div class="sub">Crea una nueva factura de forma rápida y fácil</div></div>
     </div>
   </div>
+  ${fechaFacturaActual !== hoyStr() ? `
+  <div class="notice" style="margin-bottom:14px;background:var(--dorado-claro);color:#8C0060;">
+    &#9888;&#65039; Estás facturando con fecha <b>${fmtDatePretty(fechaFacturaActual)}</b> (no es la de hoy) — así se guardará esta factura.
+    <button class="btn btn-outline btn-sm" style="margin-left:8px;" onclick="establecerFechaHoy()">Usar fecha de hoy</button>
+  </div>` : ''}
   <div class="pos-wrap">
     <div class="pos-main">
       <div class="pos-cliente autocomplete-wrap" style="flex:1;">
@@ -1166,6 +1178,7 @@ function editarFactura(id){
         <select id="efEstado">
           <option value="Cancelado" ${f.estado==='Cancelado'?'selected':''}>Cancelado</option>
           <option value="Pendiente" ${f.estado==='Pendiente'?'selected':''}>Pendiente</option>
+          <option value="Abonado" ${f.estado==='Abonado'?'selected':''}>Abonado (parcial)</option>
         </select></div>
       <div class="field" style="flex:1;"><label>Tasa Bs/$</label><input type="number" step="0.01" id="efTasa" value="${f.tasaHistorica.toFixed(2)}" oninput="renderTablaEdicionItems()"></div>
     </div>
@@ -1173,6 +1186,10 @@ function editarFactura(id){
       <thead><tr><th>Producto</th><th>P. Unit ($)</th><th>Cant.</th><th>Subtotal ($)</th><th></th></tr></thead>
       <tbody id="tablaEdicionItems"></tbody>
     </table></div>
+    <div class="totales-box" style="margin-top:10px;">
+      <div class="row"><span>Nuevo total:</span><span><b id="efTotalUSD">${fmtUSD(f.totalUSD)}</b></span></div>
+      <div class="row"><span>Equivalente Bs:</span><span id="efTotalBS">${fmtBs(f.totalBS)}</span></div>
+    </div>
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn btn-primary" onclick="guardarEdicionFactura()">Guardar Cambios</button>
     </div>
@@ -1186,6 +1203,12 @@ function renderTablaEdicionItems(){
     <tr><td>${it.nombre}</td><td>$${it.precioUnitarioUSD.toFixed(2)}</td><td>${it.cantidad}</td><td>$${it.subtotalUSD.toFixed(2)}</td>
     <td class="row-actions"><button class="del" onclick="facturaEditItems.splice(${i},1);renderTablaEdicionItems();">&#10005;</button></td></tr>
   `).join('');
+  // Recalcula el total en vivo cada vez que se borra un ítem o cambia la tasa, para que nunca quede desfasado.
+  const totalUSD = facturaEditItems.reduce((s,it)=>s+it.subtotalUSD,0);
+  const tasa = parseFloat(document.getElementById('efTasa')?.value) || 0;
+  const elU = document.getElementById('efTotalUSD'), elB = document.getElementById('efTotalBS');
+  if(elU) elU.textContent = fmtUSD(totalUSD);
+  if(elB) elB.textContent = fmtBs(totalUSD*tasa);
 }
 function guardarEdicionFactura(){
   const i = state.facturas.findIndex(f=>f.id==facturaEditId);
@@ -1195,7 +1218,27 @@ function guardarEdicionFactura(){
   const estado = document.getElementById('efEstado').value;
   const tasa = parseFloat(document.getElementById('efTasa').value) || 0;
   if(!cliente || !fecha){ alert('Completa los campos obligatorios.'); return; }
-  state.facturas[i] = { ...state.facturas[i], cliente, fecha, estado, items: [...facturaEditItems], tasaHistorica: tasa, totalBS: state.facturas[i].totalUSD * tasa };
+  if(facturaEditItems.length===0){ alert('La factura debe tener al menos un ítem. Si quieres eliminarla por completo, usa el botón de borrar en el historial.'); return; }
+
+  // Recalcula el total real a partir de los ítems que quedaron (antes se guardaba el total viejo sin tocar).
+  const nuevoTotalUSD = facturaEditItems.reduce((s,it)=>s+it.subtotalUSD,0);
+  let montoAbonadoUSD = state.facturas[i].montoAbonadoUSD || 0;
+  let estadoFinal = estado;
+
+  if(estado==='Cancelado'){
+    montoAbonadoUSD = nuevoTotalUSD;
+  } else if(estado==='Pendiente'){
+    montoAbonadoUSD = 0;
+  } else if(estado==='Abonado'){
+    // Si el total bajó por debajo de lo ya abonado, no puede deber "negativo": se ajusta al nuevo total.
+    montoAbonadoUSD = Math.min(montoAbonadoUSD, nuevoTotalUSD);
+    if(montoAbonadoUSD >= nuevoTotalUSD - 0.0001){ estadoFinal = 'Cancelado'; montoAbonadoUSD = nuevoTotalUSD; }
+  }
+
+  state.facturas[i] = {
+    ...state.facturas[i], cliente, fecha, estado: estadoFinal, items: [...facturaEditItems],
+    totalUSD: nuevoTotalUSD, tasaHistorica: tasa, totalBS: nuevoTotalUSD * tasa, montoAbonadoUSD
+  };
   closeModal(); saveState(); render();
 }
 
@@ -1360,10 +1403,16 @@ function facturasPendientesCliente(nombre){
 // Agrupa TODAS las facturas pendientes/abonadas por cliente, para no repetir
 // un renglón por cada crédito que pida la misma persona.
 function deudoresAgrupados(){
-  const nombres = [...new Set(
-    state.facturas.filter(f=>f.estado==='Pendiente'||f.estado==='Abonado').map(f=>f.cliente)
-  )];
-  return nombres.map(nombre=>{
+  const orden = [];
+  const mapa = {}; // key normalizada -> nombre "de exhibición" (el primero que se encontró)
+  state.facturas
+    .filter(f=>f.estado==='Pendiente'||f.estado==='Abonado')
+    .forEach(f=>{
+      const key = normalizarNombre(f.cliente);
+      if(!mapa[key]){ mapa[key] = f.cliente; orden.push(key); }
+    });
+  return orden.map(key=>{
+    const nombre = mapa[key];
     const facturas = facturasPendientesCliente(nombre);
     const totalUSD = facturas.reduce((s,f)=>s+saldoFactura(f),0);
     return { cliente: nombre, facturas, totalUSD, fechaMasAntigua: facturas[0] ? facturas[0].fecha : hoyStr() };
@@ -1640,7 +1689,28 @@ function renderConfiguracion(){
     </div>
     <div id="estadoArchivoUSB" style="font-size:12px;margin-top:8px;"></div>
   </div>
+  <div class="card" style="border:1.5px solid #E893C4;">
+    <h2 style="color:#B1005C;">&#9888;&#65039; Zona de Peligro</h2>
+    <p style="font-size:12.5px;color:var(--gris-txt);margin-top:-6px;">
+      Borra TODAS las facturas actuales (${state.facturas.length} en este momento) y reinicia la numeración desde <b>FAC-0001</b>.
+      El catálogo, los clientes, los egresos y la configuración NO se tocan. Esta acción no se puede deshacer.
+    </p>
+    <button class="btn" style="background:#B1005C;color:#fff;" onclick="reiniciarFacturacion()">&#128465;&#65039; Borrar todas las facturas y reiniciar contador</button>
+  </div>
   `;
+}
+// Borra el historial de facturas para empezar a usar el sistema "en serio" desde FAC-0001.
+// Deja intactos catálogo, clientes, egresos y configuración.
+function reiniciarFacturacion(){
+  const total = state.facturas.length;
+  if(total===0){ alert('Ya no hay facturas registradas — el contador ya está listo para empezar.'); return; }
+  if(!confirm(`Esto borrará las ${total} factura(s) que existen ahora mismo y reiniciará la numeración desde FAC-0001.\n\nEl catálogo, los clientes, los egresos y la configuración NO se tocan.\n\n¿Continuar?`)) return;
+  const confirmacion = prompt('Para confirmar, escribe BORRAR (en mayúsculas) y presiona Aceptar:');
+  if(confirmacion !== 'BORRAR'){ alert('Cancelado — no se borró nada.'); return; }
+  state.facturas = [];
+  state.contadorFactura = 1;
+  saveState(); render();
+  alert('Listo. Las facturas se borraron y la próxima que hagas será FAC-0001.');
 }
 function guardarDatosNegocio(){
   state.negocioIcono = document.getElementById('cfgIcono').value.trim() || '🍃';
@@ -1696,7 +1766,16 @@ loadState();
         var data = snapshot.data();
         localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(data));
         if (typeof state !== 'undefined' && typeof seedState === 'function') {
+          var overlayEl = document.getElementById('overlay');
+          var modalEstabaAbierto = overlayEl && overlayEl.classList.contains('show');
           state = Object.assign(seedState(), data);
+          // Revalida el contador de facturas por si llegaron datos más nuevos de otro dispositivo.
+          if (typeof asegurarContadorFactura === 'function') asegurarContadorFactura();
+          if (modalEstabaAbierto && typeof closeModal === 'function') {
+            // Evita guardar sobre datos viejos: si había un formulario abierto (ej. "Abonar"),
+            // se cierra en vez de dejarlo con información que la nube acaba de reemplazar.
+            closeModal();
+          }
           if (typeof render === 'function') render();
         }
       }
