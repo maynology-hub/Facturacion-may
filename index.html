@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -295,7 +296,8 @@ const productosBaseOriginales = [
 const STORAGE_KEY = 'sistema-facturacion-deudores-v1';
 
 function seedState(){
-  const hoy = new Date().toISOString().split('T')[0];
+  const _d = new Date();
+  const hoy = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
   return {
     tasaActual: 800.00,
     catalogo: productosBaseOriginales.map((nombre,i)=>({id:i+1, nombre, precioUSD:1.00})),
@@ -307,6 +309,7 @@ function seedState(){
     backups: [],
     filtroFecha: hoy,
     filtroMes: '',
+    filtroMesGanancias: '',
     filtroTextoHistorial: '',
     filtroEstadoHistorial: '',
     currentView: 'dashboard',
@@ -479,7 +482,11 @@ function actualizarEstadoConexionArchivo(){
 const fmtUSD = n => (Number(n)||0).toFixed(2) + ' $';
 const fmtBs  = n => (Number(n)||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' Bs';
 const uid = () => Date.now() + Math.floor(Math.random()*1000);
-const hoyStr = () => new Date().toISOString().split('T')[0];
+// Fecha de HOY según la hora LOCAL del dispositivo (nunca UTC, para no adelantarse de día por la noche en Venezuela).
+const hoyStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 const DIAS_SEM = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -751,15 +758,24 @@ function bloqueReporte(titulo, sub, s){
 function renderReportes(){
   const hoy = hoyStr();
   const [lunes, domingo] = inicioFinSemana(hoy);
-  const [inicioMes, finMes] = inicioFinMes(hoy);
-  const mesLbl = MESES_L[new Date(hoy+'T00:00:00').getMonth()] + ' ' + hoy.substring(0,4);
+  const mesSeleccionado = state.filtroMesGanancias || hoy.substring(0,7); // 'YYYY-MM'
+  const [inicioMes, finMes] = inicioFinMes(mesSeleccionado+'-01');
+  const mesLbl = MESES_L[parseInt(mesSeleccionado.substring(5,7),10)-1] + ' ' + mesSeleccionado.substring(0,4);
 
   return `
   <div class="pagehead"><div><h1>&#128200; Ganancias por Periodo</h1></div></div>
   ${bloqueReporte('Hoy', fmtDatePretty(hoy), statsRango(hoy, hoy))}
   ${bloqueReporte('Esta Semana', `Lunes ${lunes} al Domingo ${domingo}`, statsRango(lunes, domingo))}
-  ${bloqueReporte('Este Mes', mesLbl, statsRango(inicioMes, finMes))}
+  <div class="card" style="padding-bottom:10px;">
+    <div class="field" style="max-width:220px;margin-bottom:0;"><label>Ver ganancias de un mes</label>
+      <input type="month" id="gananciasMes" value="${mesSeleccionado}" onchange="cambiarMesGanancias()"></div>
+  </div>
+  ${bloqueReporte(mesLbl, `${inicioMes} al ${finMes}`, statsRango(inicioMes, finMes))}
   `;
+}
+function cambiarMesGanancias(){
+  state.filtroMesGanancias = document.getElementById('gananciasMes').value;
+  render();
 }
 
 // FACTURA
@@ -853,7 +869,8 @@ function filtrarProductosCombo(prefix){
   const lista = document.getElementById(prefix+'ProductoLista');
   if(!input || !lista) return;
   const q = input.value.trim().toLowerCase();
-  const matches = q ? state.catalogo.filter(p=>p.nombre.toLowerCase().includes(q)) : state.catalogo;
+  const base = [...state.catalogo].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const matches = q ? base.filter(p=>p.nombre.toLowerCase().includes(q)) : base;
   lista.innerHTML = matches.length ? matches.slice(0,60).map(p=>`
     <div class="autocomplete-item" onmousedown="seleccionarProductoCombo('${prefix}',${p.id})">${p.nombre} <span style="color:var(--gris);float:right;">${fmtBs(p.precioUSD*state.tasaActual)} <small>($${p.precioUSD.toFixed(2)})</small></span></div>
   `).join('') : `<div class="autocomplete-item" style="color:var(--gris);">Sin resultados</div>`;
@@ -909,7 +926,15 @@ function agregarItemAlCarrito(){
   if(!idSel){ alert('Selecciona un producto válido.'); return; }
   if(cant<=0){ alert('La cantidad debe ser mayor a 0.'); return; }
   const prod = state.catalogo.find(p=>p.id==idSel);
-  carritoActual.push({productoId:prod.id, nombre:prod.nombre, cantidad:cant, precioUnitarioUSD:precioU, subtotalUSD:cant*precioU});
+  // Si el mismo producto (al mismo precio unitario) ya está en la factura, se suma la cantidad
+  // en vez de crear una fila repetida con la misma descripción.
+  const existente = carritoActual.find(it=>it.productoId==prod.id && Math.abs(it.precioUnitarioUSD-precioU)<0.0001);
+  if(existente){
+    existente.cantidad += cant;
+    existente.subtotalUSD = existente.cantidad*existente.precioUnitarioUSD;
+  } else {
+    carritoActual.push({productoId:prod.id, nombre:prod.nombre, cantidad:cant, precioUnitarioUSD:precioU, subtotalUSD:cant*precioU});
+  }
   input.value = ''; hidden.value = ''; document.getElementById('vCantidad').value = 1; document.getElementById('vPrecioUnitarioUSD').value = '';
   document.getElementById('lblSubtotalItemUSD').textContent = '0.00'; document.getElementById('lblSubtotalItemBS').textContent = '0.00';
   renderCarritoTabla(); renderTotalesFactura();
@@ -919,7 +944,8 @@ function renderCarritoTabla(){
   const tbody = document.getElementById('tablaCarrito');
   if(!tbody) return;
   tbody.innerHTML = carritoActual.length ? carritoActual.map((it,i)=>`
-    <tr class="${i===carritoActual.length-1?'destacado':''}"><td>${it.nombre}</td><td>$${it.precioUnitarioUSD.toFixed(2)}</td><td>${it.cantidad}</td>
+    <tr class="${i===carritoActual.length-1?'destacado':''}"><td>${it.nombre}</td><td>$${it.precioUnitarioUSD.toFixed(2)}</td>
+    <td><input type="number" min="1" step="1" value="${it.cantidad}" style="width:58px;padding:5px 6px;border:1px solid var(--borde);border-radius:8px;font-size:13px;" onchange="cambiarCantidadCarrito(${i},this.value)"></td>
     <td><b>$${it.subtotalUSD.toFixed(2)}</b></td><td>${fmtBs(it.subtotalUSD*state.tasaActual)}</td>
     <td class="row-actions"><button class="del" onclick="quitarItemCarrito(${i})">&#10005;</button></td></tr>
   `).join('') : `<tr><td colspan="6" style="padding:0;border-bottom:none;"><div class="empty-cart">
@@ -936,6 +962,13 @@ function renderTotalesFactura(){
   if(elC) elC.textContent = cantItems;
 }
 function quitarItemCarrito(i){ carritoActual.splice(i,1); renderCarritoTabla(); renderTotalesFactura(); }
+function cambiarCantidadCarrito(i, valor){
+  const cant = parseFloat(valor)||0;
+  if(cant<=0){ quitarItemCarrito(i); return; }
+  carritoActual[i].cantidad = cant;
+  carritoActual[i].subtotalUSD = cant*carritoActual[i].precioUnitarioUSD;
+  renderCarritoTabla(); renderTotalesFactura();
+}
 function vaciarCarrito(){ carritoActual=[]; renderCarritoTabla(); renderTotalesFactura(); }
 function procesarFactura(){
   const cliente = document.getElementById('vCliente').value.trim();
@@ -1561,7 +1594,9 @@ function cobrarTodoCliente(nombreCliente){
 
 // EGRESOS
 function renderEgresos(){
-  const lista = egresosFiltrados();
+  // Igual que el Historial: la lista de gastos NO depende de "Fecha de Consulta" de arriba,
+  // para que un gasto de otro día no "desaparezca" de esta pestaña.
+  const lista = state.filtroMes ? state.egresos.filter(e=>e.fecha.startsWith(state.filtroMes)) : state.egresos.slice();
   return `
   <div class="pagehead"><div><h1>Egresos / Gastos</h1></div></div>
   <div class="two-col">
@@ -1620,7 +1655,7 @@ function renderCatalogo(){
       <div class="table-wrap"><table>
         <thead><tr><th>#</th><th>Nombre</th><th>Precio ($)</th><th>Precio (Bs hoy)</th><th></th></tr></thead>
         <tbody>
-        ${state.catalogo.map((p,i)=>`
+        ${[...state.catalogo].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'})).map((p,i)=>`
           <tr><td>${i+1}</td><td>${p.nombre}</td><td><b>${fmtUSD(p.precioUSD)}</b></td><td>${fmtBs(p.precioUSD*state.tasaActual)}</td>
           <td class="row-actions"><button onclick="prepararEdicionCatalogo(${p.id})">&#9998;</button><button class="del" onclick="eliminarProductoCatalogo(${p.id})">&#128465;</button></td></tr>
         `).join('')}
@@ -1743,6 +1778,7 @@ loadState();
 <!-- CÓDIGO COMPATIBLE CON FIREBASE 10 SIN FALLO DE MODULOS -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
   (function() {
     // Si el navegador bloqueó el script de Firebase (bloqueadores de anuncios/privacidad,
@@ -1764,48 +1800,66 @@ loadState();
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
-    
+
     var db = firebase.firestore();
     var docRef = db.collection("sistema").doc("datosGenerales");
 
-    // Si en 6 segundos no hay respuesta de Firebase (ej: sin internet), asumimos modo local.
-    setTimeout(function(){ if (estadoNube==='verificando' && window.setEstadoNube) window.setEstadoNube('local'); }, 6000);
+    // Si en 8 segundos no hay respuesta de Firebase (ej: sin internet), asumimos modo local.
+    setTimeout(function(){ if (estadoNube==='verificando' && window.setEstadoNube) window.setEstadoNube('local'); }, 8000);
 
-    // Sincronización en tiempo real desde Firebase
-    docRef.onSnapshot(function(snapshot) {
-      if (window.setEstadoNube) window.setEstadoNube('conectado');
-      if (snapshot.exists) {
-        var data = snapshot.data();
-        localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(data));
-        if (typeof state !== 'undefined' && typeof seedState === 'function') {
-          var overlayEl = document.getElementById('overlay');
-          var modalEstabaAbierto = overlayEl && overlayEl.classList.contains('show');
-          state = Object.assign(seedState(), data);
-          // Revalida el contador de facturas por si llegaron datos más nuevos de otro dispositivo.
-          if (typeof asegurarContadorFactura === 'function') asegurarContadorFactura();
-          if (modalEstabaAbierto && typeof closeModal === 'function') {
-            // Evita guardar sobre datos viejos: si había un formulario abierto (ej. "Abonar"),
-            // se cierra en vez de dejarlo con información que la nube acaba de reemplazar.
-            closeModal();
-          }
-          if (typeof render === 'function') render();
-        }
-      }
-    }, function(error) {
-      console.error("Error al recibir desde Firebase:", error);
-      if (window.setEstadoNube) window.setEstadoNube('error');
-    });
+    // Inicia sesión de forma anónima e invisible (sin pedir nada a la persona) para que, SI en
+    // algún momento activas reglas de seguridad que exijan "usuario autenticado", esto siga
+    // funcionando. Si todavía no activaste "Anonymous" en Firebase (o esa parte falla por
+    // cualquier motivo), igual se intenta sincronizar sin ella, para no romper nada mientras tanto.
+    try {
+      firebase.auth().signInAnonymously().then(function(){
+        iniciarSincronizacionFirestore();
+      }).catch(function(error){
+        console.warn("No se pudo iniciar sesión anónima (¿'Anonymous' no está activado en Firebase todavía?). Se sincroniza sin ella:", error);
+        iniciarSincronizacionFirestore();
+      });
+    } catch(error) {
+      console.warn("Firebase Auth no disponible. Se sincroniza sin ella:", error);
+      iniciarSincronizacionFirestore();
+    }
 
-    // Función para escribir cambios en Firebase
-    window.guardarEnNube = function(datos) {
-      docRef.set(datos).then(function() {
-        console.log("Guardado en la nube con éxito");
+    function iniciarSincronizacionFirestore(){
+      // Sincronización en tiempo real desde Firebase
+      docRef.onSnapshot(function(snapshot) {
         if (window.setEstadoNube) window.setEstadoNube('conectado');
-      }).catch(function(error) {
-        console.error("Error al guardar en la nube:", error);
+        if (snapshot.exists) {
+          var data = snapshot.data();
+          localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(data));
+          if (typeof state !== 'undefined' && typeof seedState === 'function') {
+            var overlayEl = document.getElementById('overlay');
+            var modalEstabaAbierto = overlayEl && overlayEl.classList.contains('show');
+            state = Object.assign(seedState(), data);
+            // Revalida el contador de facturas por si llegaron datos más nuevos de otro dispositivo.
+            if (typeof asegurarContadorFactura === 'function') asegurarContadorFactura();
+            if (modalEstabaAbierto && typeof closeModal === 'function') {
+              // Evita guardar sobre datos viejos: si había un formulario abierto (ej. "Abonar"),
+              // se cierra en vez de dejarlo con información que la nube acaba de reemplazar.
+              closeModal();
+            }
+            if (typeof render === 'function') render();
+          }
+        }
+      }, function(error) {
+        console.error("Error al recibir desde Firebase:", error);
         if (window.setEstadoNube) window.setEstadoNube('error');
       });
-    };
+
+      // Función para escribir cambios en Firebase
+      window.guardarEnNube = function(datos) {
+        docRef.set(datos).then(function() {
+          console.log("Guardado en la nube con éxito");
+          if (window.setEstadoNube) window.setEstadoNube('conectado');
+        }).catch(function(error) {
+          console.error("Error al guardar en la nube:", error);
+          if (window.setEstadoNube) window.setEstadoNube('error');
+        });
+      };
+    }
   })();
 </script>
 </body>
