@@ -310,6 +310,7 @@ function seedState(){
     filtroFecha: hoy,
     filtroMes: '',
     filtroMesGanancias: '',
+    filtroMesEgresos: '',
     filtroTextoHistorial: '',
     filtroEstadoHistorial: '',
     currentView: 'dashboard',
@@ -806,14 +807,20 @@ function renderFactura(){
           onkeydown="if(event.key==='Enter'){ event.preventDefault(); ocultarListaClientes(); document.getElementById('vProductoInput').focus(); }">
         <div class="autocomplete-list" id="vClienteLista" style="display:none;"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--gris-txt);margin:2px 0 8px 2px;cursor:pointer;">
+        <input type="checkbox" id="chkOtroServicio" onchange="toggleModoOtro()" style="width:15px;height:15px;">
+        &#9998; Es un servicio personalizado (no está en el catálogo / precio variable)
+      </label>
       <div class="pos-entry">
-        <div class="field autocomplete-wrap"><label>Producto / Servicio</label>
+        <div class="field autocomplete-wrap" id="wrapProductoNormal"><label>Producto / Servicio</label>
           <input type="text" id="vProductoInput" placeholder="Seleccionar... (Enter = tomar 1ra opción)" autocomplete="off"
             oninput="filtrarProductosCombo('v')" onfocus="filtrarProductosCombo('v')" onblur="setTimeout(()=>ocultarListaCombo('v'),150)"
             onkeydown="manejarEnterProducto(event)">
           <input type="hidden" id="vProductoIdSel" value="">
           <div class="autocomplete-list" id="vProductoLista" style="display:none;"></div>
         </div>
+        <div class="field" id="wrapProductoOtro" style="display:none;"><label>Descripción del servicio</label>
+          <input type="text" id="vOtroDescripcion" placeholder="Ej: Formateo de teléfono" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vPrecioUnitarioUSD').focus();}"></div>
         <div class="field"><label>Precio ($)</label><input type="number" step="0.0001" id="vPrecioUnitarioUSD" placeholder="0.00" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vCantidad').focus();document.getElementById('vCantidad').select();}"></div>
         <div class="field"><label>Cantidad</label><input type="number" id="vCantidad" value="1" min="1" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemAlCarrito();}"></div>
         <button class="addbtn" onclick="agregarItemAlCarrito()">+ Añadir</button>
@@ -913,18 +920,47 @@ function calcularSubtotalItem(){
   document.getElementById('lblSubtotalItemUSD').textContent = subUSD.toFixed(2);
   document.getElementById('lblSubtotalItemBS').textContent = (subUSD*state.tasaActual).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
+function toggleModoOtro(){
+  const esOtro = document.getElementById('chkOtroServicio').checked;
+  document.getElementById('wrapProductoNormal').style.display = esOtro ? 'none' : '';
+  document.getElementById('wrapProductoOtro').style.display = esOtro ? '' : 'none';
+  ocultarListaCombo('v');
+}
 function agregarItemAlCarrito(){
+  const esOtro = document.getElementById('chkOtroServicio').checked;
+  const cant = parseFloat(document.getElementById('vCantidad').value) || 0;
+  const precioU = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
+  if(cant<=0){ alert('La cantidad debe ser mayor a 0.'); return; }
+
+  if(esOtro){
+    // Servicio "Otros": no depende del catálogo, se escribe la descripción y el precio a mano.
+    const desc = document.getElementById('vOtroDescripcion').value.trim();
+    if(!desc){ alert('Escribe la descripción del servicio.'); return; }
+    if(precioU<=0){ alert('Ingresa el precio de este servicio.'); return; }
+    // Se fusiona con un "Otro" anterior solo si tiene EXACTAMENTE la misma descripción y precio.
+    const existenteOtro = carritoActual.find(it=>it.productoId===null && it.nombre.toLowerCase()===desc.toLowerCase() && Math.abs(it.precioUnitarioUSD-precioU)<0.0001);
+    if(existenteOtro){
+      existenteOtro.cantidad += cant;
+      existenteOtro.subtotalUSD = existenteOtro.cantidad*existenteOtro.precioUnitarioUSD;
+    } else {
+      carritoActual.push({productoId:null, nombre:desc, cantidad:cant, precioUnitarioUSD:precioU, subtotalUSD:cant*precioU});
+    }
+    document.getElementById('vOtroDescripcion').value = '';
+    document.getElementById('vCantidad').value = 1; document.getElementById('vPrecioUnitarioUSD').value = '';
+    document.getElementById('lblSubtotalItemUSD').textContent = '0.00'; document.getElementById('lblSubtotalItemBS').textContent = '0.00';
+    renderCarritoTabla(); renderTotalesFactura();
+    document.getElementById('vOtroDescripcion').focus();
+    return;
+  }
+
   const input = document.getElementById('vProductoInput');
   const hidden = document.getElementById('vProductoIdSel');
   let idSel = hidden.value;
-  const cant = parseFloat(document.getElementById('vCantidad').value) || 0;
-  const precioU = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
   if(!idSel && input.value.trim()){
     const match = state.catalogo.find(p=>p.nombre.toLowerCase()===input.value.trim().toLowerCase());
     if(match) idSel = match.id;
   }
   if(!idSel){ alert('Selecciona un producto válido.'); return; }
-  if(cant<=0){ alert('La cantidad debe ser mayor a 0.'); return; }
   const prod = state.catalogo.find(p=>p.id==idSel);
   // Si el mismo producto (al mismo precio unitario) ya está en la factura, se suma la cantidad
   // en vez de crear una fila repetida con la misma descripción.
@@ -1594,9 +1630,16 @@ function cobrarTodoCliente(nombreCliente){
 
 // EGRESOS
 function renderEgresos(){
-  // Igual que el Historial: la lista de gastos NO depende de "Fecha de Consulta" de arriba,
-  // para que un gasto de otro día no "desaparezca" de esta pestaña.
-  const lista = state.filtroMes ? state.egresos.filter(e=>e.fecha.startsWith(state.filtroMes)) : state.egresos.slice();
+  // Igual que "Ganancias": por defecto se muestra SOLO el mes actual (no se acumula todo junto),
+  // con su propio selector de mes para consultar meses anteriores — independiente del filtro
+  // de "Fecha de Consulta"/"Filtrar por Mes" de arriba, para que no se mezclen ni se pisen.
+  const hoy = hoyStr();
+  const mesSeleccionado = state.filtroMesEgresos || hoy.substring(0,7); // 'YYYY-MM'
+  const mesLbl = MESES_L[parseInt(mesSeleccionado.substring(5,7),10)-1] + ' ' + mesSeleccionado.substring(0,4);
+  const lista = state.egresos.filter(e=>e.fecha.startsWith(mesSeleccionado));
+  const totalUSD = lista.reduce((s,e)=>s+e.montoUSD,0);
+  const totalBS = lista.reduce((s,e)=>s+e.montoBS,0);
+
   return `
   <div class="pagehead"><div><h1>Egresos / Gastos</h1></div></div>
   <div class="two-col">
@@ -1610,19 +1653,28 @@ function renderEgresos(){
       <button class="btn btn-danger btn-block" style="margin-top:12px;" onclick="registrarEgreso()">Guardar Egreso</button>
     </div>
     <div class="card">
-      <h2>Lista de Gastos</h2>
+      <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
+        <h2 style="margin:0;">Lista de Gastos — ${mesLbl}</h2>
+        <div class="field" style="margin-bottom:0;"><label>Ver otro mes</label>
+          <input type="month" id="egresosMes" value="${mesSeleccionado}" onchange="cambiarMesEgresos()"></div>
+      </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Fecha</th><th>Concepto</th><th>Monto ($)</th><th>Monto (Bs)</th><th></th></tr></thead>
         <tbody>
         ${lista.length? [...lista].reverse().map(e=>`
           <tr><td>${e.fecha}</td><td>${e.concepto}</td><td style="color:#C2536B;"><b>${fmtUSD(e.montoUSD)}</b></td><td>${fmtBs(e.montoBS)}</td>
           <td class="row-actions"><button class="del" onclick="eliminarEgreso(${e.id})">&#128465;</button></td></tr>
-        `).join('') : `<tr><td colspan="5" class="empty">Sin egresos.</td></tr>`}
+        `).join('') : `<tr><td colspan="5" class="empty">Sin egresos en ${mesLbl}.</td></tr>`}
         </tbody>
+        ${lista.length? `<tfoot><tr><td colspan="2" style="text-align:right;font-weight:700;">Total del mes:</td><td style="color:#C2536B;"><b>${fmtUSD(totalUSD)}</b></td><td>${fmtBs(totalBS)}</td><td></td></tr></tfoot>` : ''}
       </table></div>
     </div>
   </div>
   `;
+}
+function cambiarMesEgresos(){
+  state.filtroMesEgresos = document.getElementById('egresosMes').value;
+  render();
 }
 function registrarEgreso(){
   const concepto = document.getElementById('eConcepto').value.trim();
