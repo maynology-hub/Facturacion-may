@@ -311,6 +311,7 @@ function seedState(){
     filtroMes: '',
     filtroMesGanancias: '',
     filtroMesEgresos: '',
+    ultimaActualizacionBCV: '',
     filtroTextoHistorial: '',
     filtroEstadoHistorial: '',
     currentView: 'dashboard',
@@ -330,6 +331,36 @@ function loadState(){
   asegurarContadorFactura();
   render();
   intentarReconectarArchivoUSB();
+  // Si hoy todavía no se ha traído la tasa del BCV automáticamente, se busca sola (en silencio).
+  if(state.ultimaActualizacionBCV !== hoyStr()){
+    actualizarTasaBCV(false);
+  }
+}
+
+// Trae la tasa oficial publicada por el BCV desde una fuente pública que la replica.
+// manual=true (botón "Actualizar") muestra avisos; manual=false (automático al abrir) es silencioso.
+async function actualizarTasaBCV(manual){
+  const btn = document.getElementById('btnActualizarTasaBCV');
+  if(btn){ btn.disabled = true; btn.textContent = '&#8987;'; btn.innerHTML='&#8987;'; }
+  try{
+    const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+    if(!resp.ok) throw new Error('Respuesta no válida del servicio');
+    const data = await resp.json();
+    const nueva = parseFloat(data.promedio);
+    if(!nueva || nueva<=0) throw new Error('Tasa inválida recibida');
+    if(Math.abs(nueva - state.tasaActual) > 0.0001){
+      if(!state.historialTasas) state.historialTasas = [];
+      state.historialTasas.push({fecha: hoyStr(), hora: new Date().toLocaleTimeString('es-VE'), tasa: nueva});
+      if(state.historialTasas.length > 200) state.historialTasas.shift();
+    }
+    state.tasaActual = nueva;
+    state.ultimaActualizacionBCV = hoyStr();
+    saveState(); render();
+    if(manual) alert('Tasa actualizada desde el BCV: '+nueva.toFixed(2)+' Bs/$');
+  }catch(error){
+    console.warn('No se pudo actualizar la tasa BCV automáticamente:', error);
+    if(manual) alert('No se pudo obtener la tasa del BCV en este momento (revisa tu conexión a internet). Puedes escribirla manualmente como siempre.');
+  }
 }
 
 // Garantiza que el contador de facturas nunca quede por debajo de lo ya emitido
@@ -576,7 +607,12 @@ function topbarHTML(){
     <div class="tbcard">
       <div class="tb-ic dorado">&#128176;</div>
       <div class="tb-body"><label>Tasa del Día (Bs/$):</label>
-        <input type="number" step="0.01" id="tasaDolar" value="${state.tasaActual.toFixed(2)}" onchange="actualizarTasa()"></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="number" step="0.01" id="tasaDolar" value="${state.tasaActual.toFixed(2)}" onchange="actualizarTasa()" style="width:100%;">
+          <button class="btn btn-outline btn-sm" id="btnActualizarTasaBCV" title="Traer la tasa oficial del BCV ahora" onclick="actualizarTasaBCV(true)">&#128260;</button>
+        </div>
+        ${state.ultimaActualizacionBCV===hoyStr() ? `<div style="font-size:10px;color:var(--gris);margin-top:3px;">&#9989; Tasa BCV de hoy</div>` : ''}
+      </div>
     </div>
     <div class="tbcard">
       <div class="tb-ic morado">&#128197;</div>
