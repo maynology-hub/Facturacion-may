@@ -312,6 +312,9 @@ function seedState(){
     filtroMesGanancias: '',
     filtroMesEgresos: '',
     ultimaActualizacionBCV: '',
+    // Guarda los ids que se borraron a propósito, para que al fusionar con la nube
+    // no "resuciten" cosas que sí eliminaste (ver registrarBorrado()).
+    eliminados: { facturas: [], clientes: [], catalogo: [], egresos: [] },
     filtroTextoHistorial: '',
     filtroEstadoHistorial: '',
     currentView: 'dashboard',
@@ -539,6 +542,16 @@ function badgeEstado(e){
   return `<span class="badge ${map[e]||'amar'}">${e}</span>`;
 }
 // Cuánto falta por pagar de una factura, considerando abonos parciales ya registrados
+// Marca un id como "borrado a propósito" en la categoría indicada (facturas/clientes/catalogo/egresos),
+// para que al sincronizar con la nube no vuelva a aparecer. Guarda como máximo los últimos 1000.
+function registrarBorrado(categoria, id){
+  if(!state.eliminados) state.eliminados = { facturas: [], clientes: [], catalogo: [], egresos: [] };
+  if(!state.eliminados[categoria]) state.eliminados[categoria] = [];
+  if(!state.eliminados[categoria].includes(id)){
+    state.eliminados[categoria].push(id);
+    if(state.eliminados[categoria].length > 1000) state.eliminados[categoria].shift();
+  }
+}
 function saldoFactura(f){
   return Math.max(0, (f.totalUSD||0) - (f.montoAbonadoUSD||0));
 }
@@ -1268,6 +1281,7 @@ function copiarResumenCuentaCliente(nombreCliente){
 }
 function eliminarFactura(id){
   if(confirm('¿Eliminar esta factura?')){
+    registrarBorrado('facturas', id);
     state.facturas = state.facturas.filter(f=>f.id!=id);
     saveState(); render();
   }
@@ -1442,6 +1456,7 @@ function prepararEdicionCliente(id){
 
 function eliminarCliente(id){
   if(confirm('¿Eliminar este cliente? (No borra sus facturas ya emitidas)')){
+    registrarBorrado('clientes', id);
     state.clientes = state.clientes.filter(c=>c.id!==id);
     saveState(); render();
   }
@@ -1720,7 +1735,7 @@ function registrarEgreso(){
   saveState(); render();
 }
 function eliminarEgreso(id){
-  if(confirm('¿Eliminar gasto?')){ state.egresos = state.egresos.filter(e=>e.id!=id); saveState(); render(); }
+  if(confirm('¿Eliminar gasto?')){ registrarBorrado('egresos', id); state.egresos = state.egresos.filter(e=>e.id!=id); saveState(); render(); }
 }
 
 // CATÁLOGO
@@ -1773,7 +1788,7 @@ function prepararEdicionCatalogo(id){
   document.getElementById('cPrecioBS').value = (prod.precioUSD*state.tasaActual).toFixed(2);
 }
 function eliminarProductoCatalogo(id){
-  if(confirm('¿Eliminar del catálogo?')){ state.catalogo = state.catalogo.filter(p=>p.id!==id); saveState(); render(); }
+  if(confirm('¿Eliminar del catálogo?')){ registrarBorrado('catalogo', id); state.catalogo = state.catalogo.filter(p=>p.id!==id); saveState(); render(); }
 }
 
 // CONFIGURACIÓN
@@ -1842,6 +1857,7 @@ function reiniciarFacturacion(){
   if(!confirm(`Esto borrará las ${total} factura(s) que existen ahora mismo y reiniciará la numeración desde FAC-0001.\n\nEl catálogo, los clientes, los egresos y la configuración NO se tocan.\n\n¿Continuar?`)) return;
   const confirmacion = prompt('Para confirmar, escribe BORRAR (en mayúsculas) y presiona Aceptar:');
   if(confirmacion !== 'BORRAR'){ alert('Cancelado — no se borró nada.'); return; }
+  state.facturas.forEach(f=>registrarBorrado('facturas', f.id));
   state.facturas = [];
   state.contadorFactura = 1;
   saveState(); render();
@@ -1912,6 +1928,40 @@ loadState();
     }
 
     function iniciarSincronizacionFirestore(){
+      // Une dos listas (facturas/clientes/catálogo/egresos) por su "id", sin perder lo que
+      // haya agregado CUALQUIERA de los dos dispositivos. Si el mismo id fue editado en ambos
+      // lados a la vez, gana la versión de este dispositivo (caso raro; lo común es que cada
+      // quien agregue cosas DISTINTAS, y eso sí queda perfectamente combinado).
+      // "eliminadosIds" son los ids que se borraron a propósito: se excluyen aunque el otro
+      // dispositivo todavía los tenga, para que un borrado no "resucite" al sincronizar.
+      function fusionarListasPorId(remota, local, eliminadosIds){
+        remota = Array.isArray(remota) ? remota : [];
+        local = Array.isArray(local) ? local : [];
+        const idsBorrados = new Set(eliminadosIds||[]);
+        const mapa = {};
+        remota.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
+        local.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
+        idsBorrados.forEach(function(id){ delete mapa[id]; });
+        return Object.values(mapa);
+      }
+      function fusionarEstadoParaNube(remoto, local){
+        remoto = remoto || {};
+        const eliminadosRemoto = remoto.eliminados || {};
+        const eliminadosLocal = local.eliminados || {};
+        const resultado = Object.assign({}, remoto, local);
+        resultado.eliminados = { facturas: [], clientes: [], catalogo: [], egresos: [] };
+        ['facturas','clientes','catalogo','egresos'].forEach(function(campo){
+          // Las listas de borrados de ambos dispositivos se combinan, para que un borrado
+          // hecho en cualquiera de los dos se respete siempre (y no solo la última vez).
+          var idsBorrados = Array.from(new Set([].concat(eliminadosRemoto[campo]||[], eliminadosLocal[campo]||[])));
+          resultado.eliminados[campo] = idsBorrados.slice(-1000);
+          resultado[campo] = fusionarListasPorId(remoto[campo], local[campo], idsBorrados);
+        });
+        // El número de factura nunca debe retroceder, para no repetir numeración entre dispositivos.
+        resultado.contadorFactura = Math.max(remoto.contadorFactura||1, local.contadorFactura||1);
+        return resultado;
+      }
+
       // Sincronización en tiempo real desde Firebase
       docRef.onSnapshot(function(snapshot) {
         if (window.setEstadoNube) window.setEstadoNube('conectado');
@@ -1937,10 +1987,18 @@ loadState();
         if (window.setEstadoNube) window.setEstadoNube('error');
       });
 
-      // Función para escribir cambios en Firebase
+      // Función para escribir cambios en Firebase — usa una transacción que primero LEE lo que
+      // haya en el servidor y fusiona, en vez de sobrescribirlo a ciegas. Así, si dos
+      // dispositivos guardan casi al mismo tiempo, ninguno le borra los datos al otro.
       window.guardarEnNube = function(datos) {
-        docRef.set(datos).then(function() {
-          console.log("Guardado en la nube con éxito");
+        db.runTransaction(function(transaction){
+          return transaction.get(docRef).then(function(doc){
+            var remoto = doc.exists ? doc.data() : {};
+            var fusionado = fusionarEstadoParaNube(remoto, datos);
+            transaction.set(docRef, fusionado);
+          });
+        }).then(function() {
+          console.log("Guardado y fusionado en la nube con éxito");
           if (window.setEstadoNube) window.setEstadoNube('conectado');
         }).catch(function(error) {
           console.error("Error al guardar en la nube:", error);
