@@ -321,6 +321,10 @@ function seedState(){
     negocioIcono: '🍃',
     negocioNombre: 'Sistema Comercial',
     negocioTagline: 'Facturación & Deudores',
+    negocioRif: '',
+    negocioDireccion: '',
+    negocioTelefono: '',
+    negocioEmail: '',
   };
 }
 let state = seedState();
@@ -1170,7 +1174,7 @@ function renderHistorial(){
           : '';
         return `<tr>${celdaCliente}<td><b>${f.numeroFactura}</b></td><td>${f.fecha}</td><td><small>${resumen}</small></td>
         <td><b>${fmtUSD(f.totalUSD)}</b></td><td>${f.tasaHistorica.toFixed(2)}</td><td>${fmtBs(f.totalBS)}</td><td>${badgeEstado(f.estado)}</td>
-        <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="editarFactura(${f.id})">&#9998;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
+        <td class="row-actions"><button onclick="verDetalleFactura(${f.id})">&#128065;</button><button onclick="editarFactura(${f.id})">&#9998;</button><button onclick="generarReciboCliente(${f.id})">&#129534;</button><button title="Descargar Factura PDF" onclick="generarFacturaPDF(${f.id})">&#128196;</button><button class="del" onclick="eliminarFactura(${f.id})">&#128465;</button></td></tr>`;
       }).join('')
     ).join('') : `<tr><td colspan="9" class="empty">No se encontraron facturas con esos filtros.</td></tr>`}
     </tbody>
@@ -1203,7 +1207,122 @@ function verDetalleFactura(id){
         <tbody>${f.abonos.map(a=>`<tr><td>${a.fecha}</td><td>${fmtUSD(a.montoUSD)}</td><td>${a.tasaHistorica.toFixed(2)}</td></tr>`).join('')}</tbody>
       </table></div>
     </div>` : ''}
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary btn-block" onclick="generarFacturaPDF(${f.id})">&#128196; Descargar Factura (PDF)</button>
+    </div>
   `);
+}
+
+// FACTURA EN PDF (documento completo para el cliente)
+function generarFacturaPDF(id){
+  const f = state.facturas.find(x=>x.id==id);
+  if(!f) return;
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('No se pudo cargar el generador de PDF. Verifica tu conexión a internet e intenta de nuevo.');
+    return;
+  }
+  const cliente = buscarClientePorNombre(f.cliente) || {};
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margenIzq = 14, margenDer = pageW - 14;
+
+  // --- Encabezado: datos del negocio (izquierda) ---
+  let y = 18;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(25, 25, 79);
+  doc.text(state.negocioNombre || 'Sistema Comercial', margenIzq, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 90, 90);
+  y += 6;
+  if(state.negocioRif){ doc.text('RIF: ' + state.negocioRif, margenIzq, y); y += 4.5; }
+  if(state.negocioDireccion){ doc.text(doc.splitTextToSize(state.negocioDireccion, 95), margenIzq, y); y += 4.5 * doc.splitTextToSize(state.negocioDireccion, 95).length; }
+  if(state.negocioTelefono){ doc.text('Tel: ' + state.negocioTelefono, margenIzq, y); y += 4.5; }
+  if(state.negocioEmail){ doc.text(state.negocioEmail, margenIzq, y); y += 4.5; }
+  const yNegocioFin = y;
+
+  // --- Encabezado: datos del documento (derecha) ---
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(135, 60, 168);
+  doc.text('FACTURA', margenDer, 18, { align: 'right' });
+  doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+  doc.text(f.numeroFactura, margenDer, 25, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 90, 90);
+  doc.text('Fecha de emisión: ' + fmtDatePretty(f.fecha), margenDer, 31, { align: 'right' });
+  doc.text('Estado: ' + f.estado, margenDer, 36, { align: 'right' });
+
+  y = Math.max(yNegocioFin, 40) + 5;
+  doc.setDrawColor(230, 221, 240); doc.setLineWidth(0.4);
+  doc.line(margenIzq, y, margenDer, y);
+  y += 8;
+
+  // --- Datos del cliente ---
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(25, 25, 79);
+  doc.text('Facturar a:', margenIzq, y); y += 5.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(40, 40, 40);
+  doc.text(f.cliente || '—', margenIzq, y); y += 4.5;
+  if(cliente.rif){ doc.text('RIF/Cédula: ' + cliente.rif, margenIzq, y); y += 4.5; }
+  if(cliente.direccion){ const dl = doc.splitTextToSize(cliente.direccion, 120); doc.text(dl, margenIzq, y); y += 4.5 * dl.length; }
+  if(cliente.telefono){ doc.text('Tel: ' + cliente.telefono, margenIzq, y); y += 4.5; }
+  if(cliente.correo){ doc.text(cliente.correo, margenIzq, y); y += 4.5; }
+  y += 4;
+
+  // --- Tabla de productos/servicios ---
+  const filas = f.items.map(it => [it.nombre, String(it.cantidad), '$' + it.precioUnitarioUSD.toFixed(2), '$' + it.subtotalUSD.toFixed(2)]);
+  doc.autoTable({
+    startY: y,
+    head: [['Producto / Servicio', 'Cant.', 'P. Unitario', 'Subtotal']],
+    body: filas,
+    theme: 'grid',
+    headStyles: { fillColor: [135, 60, 168], textColor: 255, fontStyle: 'bold', fontSize: 9.5 },
+    styles: { fontSize: 9.5, cellPadding: 3, textColor: [50,50,50] },
+    columnStyles: { 1: { halign: 'center', cellWidth: 20 }, 2: { halign: 'right', cellWidth: 35 }, 3: { halign: 'right', cellWidth: 35 } },
+    margin: { left: margenIzq, right: 14 }
+  });
+
+  let fy = doc.lastAutoTable.finalY + 8;
+
+  // --- Totales ---
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(70, 70, 70);
+  doc.text('Total en bolívares (tasa ' + f.tasaHistorica.toFixed(2) + ' Bs/$):', margenDer - 55, fy, { align: 'right' });
+  doc.text(fmtBs(f.totalBS), margenDer, fy, { align: 'right' });
+  fy += 7;
+  doc.setDrawColor(230, 221, 240); doc.line(margenDer - 75, fy - 4.5, margenDer, fy - 4.5);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(25, 25, 79);
+  doc.text('TOTAL:', margenDer - 55, fy, { align: 'right' });
+  doc.text(fmtUSD(f.totalUSD), margenDer, fy, { align: 'right' });
+  fy += 8;
+
+  if(f.montoAbonadoUSD > 0){
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(80, 80, 80);
+    doc.text('Abonado:', margenDer - 55, fy, { align: 'right' });
+    doc.text(fmtUSD(f.montoAbonadoUSD), margenDer, fy, { align: 'right' });
+    fy += 6;
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(177, 81, 107);
+    doc.text('Saldo pendiente:', margenDer - 55, fy, { align: 'right' });
+    doc.text(fmtUSD(saldoFactura(f)), margenDer, fy, { align: 'right' });
+    fy += 8;
+  }
+
+  // --- Detalle de abonos, si los hay ---
+  if(f.abonos && f.abonos.length){
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(25, 25, 79);
+    doc.text('Abonos registrados', margenIzq, fy); fy += 2;
+    doc.autoTable({
+      startY: fy,
+      head: [['Fecha', 'Monto ($)', 'Tasa ese día']],
+      body: f.abonos.map(a => [a.fecha, '$' + a.montoUSD.toFixed(2), a.tasaHistorica.toFixed(2) + ' Bs/$']),
+      theme: 'plain',
+      styles: { fontSize: 8.5, cellPadding: 2, textColor: [80,80,80] },
+      headStyles: { fontStyle: 'bold', textColor: [90,90,90] },
+      margin: { left: margenIzq, right: 14 }
+    });
+    fy = doc.lastAutoTable.finalY + 6;
+  }
+
+  // --- Pie de página ---
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+  doc.text('Documento generado electrónicamente — ' + (state.negocioNombre || 'Sistema Comercial'), margenIzq, pageH - 12);
+
+  doc.save(f.numeroFactura + ' - ' + (f.cliente || 'cliente') + '.pdf');
 }
 
 // RECIBO CLIENTE
@@ -1226,8 +1345,9 @@ function generarReciboCliente(id){
       <span class="recibo-total-bs">${fmtBs(totalBsHoy)}</span>
       <div class="recibo-tasa">Tasa de hoy: ${state.tasaActual.toFixed(2)} Bs/$</div>
     </div>
-    <div style="margin-top:14px;">
-      <button class="btn btn-primary btn-block" onclick="copiarMensajeRecibo(${f.id})">&#128203; Copiar para WhatsApp</button>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="copiarMensajeRecibo(${f.id})">&#128203; Copiar para WhatsApp</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="generarFacturaPDF(${f.id})">&#128196; Factura PDF</button>
     </div>
   `);
 }
@@ -1385,7 +1505,7 @@ function buscarClientePorNombre(nombre){
 // Se llama al procesar una factura: si el nombre no existe como cliente registrado, lo crea automáticamente.
 function guardarOActualizarClienteDesdeFactura(nombreCliente){
   if(!buscarClientePorNombre(nombreCliente)){
-    state.clientes.push({id: uid(), nombre: nombreCliente, telefono: '', notas: ''});
+    state.clientes.push({id: uid(), nombre: nombreCliente, telefono: '', rif: '', direccion: '', correo: '', notas: ''});
   }
 }
 
@@ -1406,22 +1526,27 @@ function renderClientes(){
     <div class="card">
       <h2 id="tituloFormCliente">${clienteEditId ? '&#9998; Editar Cliente' : '+ Nuevo Cliente'}</h2>
       <div class="field"><label>Nombre</label><input type="text" id="clNombre"></div>
-      <div class="field"><label>Teléfono</label><input type="text" id="clTelefono" placeholder="Ej: 0414-1234567"></div>
-      <div class="field"><label>Notas</label><textarea id="clNotas" rows="2" placeholder="Preferencias, dirección, etc."></textarea></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>Teléfono</label><input type="text" id="clTelefono" placeholder="Ej: 0414-1234567"></div>
+        <div class="field" style="flex:1;"><label>RIF / Cédula</label><input type="text" id="clRif" placeholder="V-12345678"></div>
+      </div>
+      <div class="field"><label>Dirección</label><input type="text" id="clDireccion" placeholder="Dirección para la factura"></div>
+      <div class="field"><label>Correo electrónico</label><input type="text" id="clCorreo" placeholder="cliente@correo.com"></div>
+      <div class="field"><label>Notas</label><textarea id="clNotas" rows="2" placeholder="Preferencias, etc."></textarea></div>
       <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
       ${clienteEditId ? `<button class="btn btn-outline" style="margin-left:8px;" onclick="clienteEditId=null;render();">Cancelar edición</button>` : ''}
     </div>
     <div class="card">
       <h2>Listado de Clientes</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Comprado Total ($)</th><th>Deuda Pendiente ($)</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Teléfono</th><th>RIF/Cédula</th><th>Comprado Total ($)</th><th>Deuda Pendiente ($)</th><th></th></tr></thead>
         <tbody>
           ${state.clientes.length ? state.clientes.map(c=>{
             const deuda = deudaClienteUSD(c.nombre);
-            return `<tr><td><b>${c.nombre}</b></td><td>${c.telefono||'—'}</td><td>${fmtUSD(totalCompradoClienteUSD(c.nombre))}</td>
+            return `<tr><td><b>${c.nombre}</b></td><td>${c.telefono||'—'}</td><td>${c.rif||'—'}</td><td>${fmtUSD(totalCompradoClienteUSD(c.nombre))}</td>
             <td>${deuda>0? `<span class="badge rojo">${fmtUSD(deuda)}</span>` : '—'}</td>
             <td class="row-actions">${c.telefono? `<button title="WhatsApp" onclick="contactarClienteWhatsApp('${escAttr(c.nombre)}')">&#128241;</button>`:''}<button onclick="prepararEdicionCliente(${c.id})">&#9998;</button><button class="del" onclick="eliminarCliente(${c.id})">&#128465;</button></td></tr>`;
-          }).join('') : `<tr><td colspan="5" class="empty">Aún no tienes clientes registrados. Se crean automáticamente al facturar, o agrégalos aquí.</td></tr>`}
+          }).join('') : `<tr><td colspan="6" class="empty">Aún no tienes clientes registrados. Se crean automáticamente al facturar, o agrégalos aquí.</td></tr>`}
         </tbody>
       </table></div>
     </div>
@@ -1432,14 +1557,17 @@ function renderClientes(){
 function guardarCliente(){
   const nombre = document.getElementById('clNombre').value.trim();
   const telefono = document.getElementById('clTelefono').value.trim();
+  const rif = document.getElementById('clRif').value.trim();
+  const direccion = document.getElementById('clDireccion').value.trim();
+  const correo = document.getElementById('clCorreo').value.trim();
   const notas = document.getElementById('clNotas').value.trim();
   if(!nombre){ alert('Ingresa el nombre del cliente.'); return; }
   if(clienteEditId){
     const i = state.clientes.findIndex(c=>c.id===clienteEditId);
-    if(i!==-1){ state.clientes[i] = {...state.clientes[i], nombre, telefono, notas}; }
+    if(i!==-1){ state.clientes[i] = {...state.clientes[i], nombre, telefono, rif, direccion, correo, notas}; }
   } else {
     if(buscarClientePorNombre(nombre)){ alert('Ya existe un cliente con ese nombre.'); return; }
-    state.clientes.push({id: uid(), nombre, telefono, notas});
+    state.clientes.push({id: uid(), nombre, telefono, rif, direccion, correo, notas});
   }
   clienteEditId = null;
   saveState(); render();
@@ -1451,6 +1579,9 @@ function prepararEdicionCliente(id){
   clienteEditId = id; render();
   document.getElementById('clNombre').value = c.nombre;
   document.getElementById('clTelefono').value = c.telefono||'';
+  document.getElementById('clRif').value = c.rif||'';
+  document.getElementById('clDireccion').value = c.direccion||'';
+  document.getElementById('clCorreo').value = c.correo||'';
   document.getElementById('clNotas').value = c.notas||'';
 }
 
@@ -1801,7 +1932,14 @@ function renderConfiguracion(){
       <div class="field" style="width:90px;"><label>Ícono</label><input type="text" id="cfgIcono" value="${state.negocioIcono||'🍃'}"></div>
       <div class="field" style="flex:1;"><label>Nombre</label><input type="text" id="cfgNombre" value="${(state.negocioNombre||'').replace(/"/g,'&quot;')}"></div>
     </div>
-    <button class="btn btn-primary" onclick="guardarDatosNegocio()">Guardar Nombre</button>
+    <div style="display:flex;gap:12px;">
+      <div class="field" style="flex:1;"><label>RIF</label><input type="text" id="cfgRif" placeholder="J-12345678-9" value="${(state.negocioRif||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field" style="flex:1;"><label>Teléfono</label><input type="text" id="cfgTelefono" placeholder="0414-1234567" value="${(state.negocioTelefono||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <div class="field"><label>Dirección fiscal</label><input type="text" id="cfgDireccion" value="${(state.negocioDireccion||'').replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label>Correo electrónico</label><input type="text" id="cfgEmail" value="${(state.negocioEmail||'').replace(/"/g,'&quot;')}"></div>
+    <div class="notice" style="margin-bottom:12px;"><b>&#9432;</b> Estos datos aparecen en el encabezado del PDF de cada factura.</div>
+    <button class="btn btn-primary" onclick="guardarDatosNegocio()">Guardar Datos del Negocio</button>
   </div>
   <div class="card">
     <h2>Respaldo de Datos</h2>
@@ -1866,6 +2004,10 @@ function reiniciarFacturacion(){
 function guardarDatosNegocio(){
   state.negocioIcono = document.getElementById('cfgIcono').value.trim() || '🍃';
   state.negocioNombre = document.getElementById('cfgNombre').value.trim() || 'Sistema Comercial';
+  state.negocioRif = document.getElementById('cfgRif').value.trim();
+  state.negocioTelefono = document.getElementById('cfgTelefono').value.trim();
+  state.negocioDireccion = document.getElementById('cfgDireccion').value.trim();
+  state.negocioEmail = document.getElementById('cfgEmail').value.trim();
   saveState(); actualizarMarca(); alert('Datos guardados.');
 }
 function descargarRespaldo(){
@@ -1880,6 +2022,8 @@ loadState();
 </script>
 
 <!-- CÓDIGO COMPATIBLE CON FIREBASE 10 SIN FALLO DE MODULOS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
