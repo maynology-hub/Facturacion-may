@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -341,6 +342,7 @@ function loadState(){
   if(!state.negocioDireccion){ state.negocioDireccion = 'Calle El Tubo, Casa Nro. 12, Sector Las Calderas, Coro, Edo. Falcón. Zona Postal 4132'; }
   if(!state.negocioTelefono){ state.negocioTelefono = '+58 412-1004066'; }
   asegurarContadorFactura();
+  if(unificarClientesDuplicados()){ saveState(); }
   render();
   intentarReconectarArchivoUSB();
   // Si hoy todavía no se ha traído la tasa del BCV automáticamente, se busca sola (en silencio).
@@ -880,7 +882,9 @@ function renderFactura(){
         </div>
         <div class="field" id="wrapProductoOtro" style="display:none;"><label>Descripción del servicio</label>
           <input type="text" id="vOtroDescripcion" placeholder="Ej: Formateo de teléfono" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vPrecioUnitarioUSD').focus();}"></div>
-        <div class="field"><label>Precio ($)</label><input type="number" step="0.0001" id="vPrecioUnitarioUSD" placeholder="0.00" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vCantidad').focus();document.getElementById('vCantidad').select();}"></div>
+        <div class="field" id="wrapMonedaOtro" style="display:none;"><label>Cobrar en</label>
+          <select id="vMonedaPrecio" onchange="cambiarMonedaPrecio()"><option value="USD">Dólares ($)</option><option value="BS">Bolívares (Bs)</option></select></div>
+        <div class="field"><label id="lblPrecioUnit">Precio ($)</label><input type="number" step="0.0001" id="vPrecioUnitarioUSD" placeholder="0.00" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('vCantidad').focus();document.getElementById('vCantidad').select();}"></div>
         <div class="field"><label>Cantidad</label><input type="number" id="vCantidad" value="1" min="1" oninput="calcularSubtotalItem()" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemAlCarrito();}"></div>
         <button class="addbtn" onclick="agregarItemAlCarrito()">+ Añadir</button>
       </div>
@@ -934,9 +938,9 @@ function filtrarProductosCombo(prefix){
   const input = document.getElementById(prefix+'ProductoInput');
   const lista = document.getElementById(prefix+'ProductoLista');
   if(!input || !lista) return;
-  const q = input.value.trim().toLowerCase();
+  const q = normalizarNombre(input.value);
   const base = [...state.catalogo].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
-  const matches = q ? base.filter(p=>p.nombre.toLowerCase().includes(q)) : base;
+  const matches = q ? base.filter(p=>normalizarNombre(p.nombre).includes(q)) : base;
   lista.innerHTML = matches.length ? matches.slice(0,60).map(p=>`
     <div class="autocomplete-item" onmousedown="seleccionarProductoCombo('${prefix}',${p.id})">${p.nombre} <span style="color:var(--gris);float:right;">${fmtBs(p.precioUSD*state.tasaActual)} <small>($${p.precioUSD.toFixed(2)})</small></span></div>
   `).join('') : `<div class="autocomplete-item" style="color:var(--gris);">Sin resultados</div>`;
@@ -972,9 +976,26 @@ function seleccionarProductoCombo(prefix, id){
     document.getElementById('efPrecio').value = prod.precioUSD;
   }
 }
+// En "servicio personalizado" el precio se puede escribir en $ o en Bs. Internamente todo se
+// guarda en $ (el Bs se convierte con la tasa de hoy, igual que el resto del sistema), así que
+// el total en Bs de la factura queda exactamente igual a lo que escribiste.
+function precioIngresadoUSD(){
+  const crudo = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
+  const chk = document.getElementById('chkOtroServicio');
+  const sel = document.getElementById('vMonedaPrecio');
+  if(chk && chk.checked && sel && sel.value==='BS'){
+    return state.tasaActual>0 ? crudo/state.tasaActual : 0;
+  }
+  return crudo;
+}
+function cambiarMonedaPrecio(){
+  const esBs = document.getElementById('vMonedaPrecio').value==='BS';
+  document.getElementById('lblPrecioUnit').textContent = esBs ? 'Precio (Bs)' : 'Precio ($)';
+  calcularSubtotalItem();
+}
 function calcularSubtotalItem(){
   const cant = parseFloat(document.getElementById('vCantidad').value) || 0;
-  const precioU = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
+  const precioU = precioIngresadoUSD();
   const subUSD = cant*precioU;
   document.getElementById('lblSubtotalItemUSD').textContent = subUSD.toFixed(2);
   document.getElementById('lblSubtotalItemBS').textContent = (subUSD*state.tasaActual).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -983,12 +1004,16 @@ function toggleModoOtro(){
   const esOtro = document.getElementById('chkOtroServicio').checked;
   document.getElementById('wrapProductoNormal').style.display = esOtro ? 'none' : '';
   document.getElementById('wrapProductoOtro').style.display = esOtro ? '' : 'none';
+  document.getElementById('wrapMonedaOtro').style.display = esOtro ? '' : 'none';
+  if(!esOtro){ document.getElementById('vMonedaPrecio').value = 'USD'; document.getElementById('lblPrecioUnit').textContent = 'Precio ($)'; }
   ocultarListaCombo('v');
+  calcularSubtotalItem();
 }
 function agregarItemAlCarrito(){
   const esOtro = document.getElementById('chkOtroServicio').checked;
   const cant = parseFloat(document.getElementById('vCantidad').value) || 0;
-  const precioU = parseFloat(document.getElementById('vPrecioUnitarioUSD').value) || 0;
+  if(esOtro && document.getElementById('vMonedaPrecio').value==='BS' && !(state.tasaActual>0)){ alert('Primero coloca la tasa del dólar para cobrar en bolívares.'); return; }
+  const precioU = precioIngresadoUSD();
   if(cant<=0){ alert('La cantidad debe ser mayor a 0.'); return; }
 
   if(esOtro){
@@ -1066,7 +1091,9 @@ function cambiarCantidadCarrito(i, valor){
 }
 function vaciarCarrito(){ carritoActual=[]; renderCarritoTabla(); renderTotalesFactura(); }
 function procesarFactura(){
-  const cliente = document.getElementById('vCliente').value.trim();
+  let cliente = document.getElementById('vCliente').value.trim().replace(/\s+/g,' ');
+  const clienteExistente = buscarClientePorNombre(cliente);
+  if(clienteExistente) cliente = clienteExistente.nombre; // usa siempre el nombre como ya está guardado
   const estadoPago = document.getElementById('vEstadoPago').value;
   const observacion = document.getElementById('vObservacion') ? document.getElementById('vObservacion').value.trim() : '';
   const fecha = state.filtroFecha || hoyStr();
@@ -1113,12 +1140,12 @@ function facturasHistorialFiltradas(){
   // El Historial es un libro completo: NO se limita al día de "Fecha de Consulta" (eso es
   // solo para el Dashboard). Aquí sí respeta "Filtrar por Mes" si el usuario lo usa.
   let lista = state.filtroMes ? state.facturas.filter(f=>f.fecha.startsWith(state.filtroMes)) : state.facturas.slice();
-  const q = (state.filtroTextoHistorial||'').trim().toLowerCase();
+  const q = normalizarNombre(state.filtroTextoHistorial||'');
   if(q){
     lista = lista.filter(f =>
-      f.numeroFactura.toLowerCase().includes(q) ||
-      f.cliente.toLowerCase().includes(q) ||
-      f.items.some(i=>i.nombre.toLowerCase().includes(q))
+      normalizarNombre(f.numeroFactura).includes(q) ||
+      normalizarNombre(f.cliente).includes(q) ||
+      f.items.some(i=>normalizarNombre(i.nombre).includes(q))
     );
   }
   if(state.filtroEstadoHistorial){
@@ -1475,7 +1502,9 @@ function renderTablaEdicionItems(){
 function guardarEdicionFactura(){
   const i = state.facturas.findIndex(f=>f.id==facturaEditId);
   if(i===-1) return;
-  const cliente = document.getElementById('efCliente').value.trim();
+  let cliente = document.getElementById('efCliente').value.trim().replace(/\s+/g,' ');
+  const clienteExistenteEf = buscarClientePorNombre(cliente);
+  if(clienteExistenteEf) cliente = clienteExistenteEf.nombre;
   const fecha = document.getElementById('efFecha').value;
   const estado = document.getElementById('efEstado').value;
   const tasa = parseFloat(document.getElementById('efTasa').value) || 0;
@@ -1507,7 +1536,11 @@ function guardarEdicionFactura(){
 // CLIENTES
 let clienteEditId = null;
 
-function normalizarNombre(n){ return (n||'').trim().toLowerCase(); }
+// Compara nombres ignorando mayúsculas, acentos y espacios de más:
+// "María  Pérez", "maria perez" y "MARIA PEREZ" son la misma persona.
+function normalizarNombre(n){
+  return String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+}
 // Escapa un texto para insertarlo de forma segura dentro de un onclick="...('texto')" —
 // sin esto, un nombre con comillas dobles rompe el botón (bug real detectado y corregido).
 function escAttr(s){
@@ -1524,6 +1557,37 @@ function guardarOActualizarClienteDesdeFactura(nombreCliente){
   if(!buscarClientePorNombre(nombreCliente)){
     state.clientes.push({id: uid(), nombre: nombreCliente, telefono: '', rif: '', direccion: '', correo: '', notas: ''});
   }
+}
+
+// Une clientes que son el mismo con distinto formato (mayúsculas, acentos, espacios).
+// Conserva el que tiene más datos, completa sus campos vacíos con los del duplicado y
+// pasa todas las facturas al nombre conservado. Devuelve true si cambió algo.
+function unificarClientesDuplicados(){
+  let cambio = false;
+  const grupos = {};
+  (state.clientes||[]).forEach(c=>{
+    const k = normalizarNombre(c.nombre);
+    if(!k) return;
+    (grupos[k] = grupos[k] || []).push(c);
+  });
+  const llenos = c => ['telefono','rif','direccion','correo','notas'].filter(f=>c[f]).length;
+  Object.keys(grupos).forEach(k=>{
+    const g = grupos[k];
+    if(g.length<2) return;
+    g.sort((a,b)=>llenos(b)-llenos(a));
+    const principal = g[0];
+    g.slice(1).forEach(dup=>{
+      ['telefono','rif','direccion','correo','notas'].forEach(f=>{ if(!principal[f] && dup[f]) principal[f]=dup[f]; });
+      registrarBorrado('clientes', dup.id);
+      state.clientes = state.clientes.filter(c=>c.id!==dup.id);
+      cambio = true;
+    });
+  });
+  (state.facturas||[]).forEach(f=>{
+    const c = buscarClientePorNombre(f.cliente);
+    if(c && f.cliente !== c.nombre){ f.cliente = c.nombre; cambio = true; }
+  });
+  return cambio;
 }
 
 function deudaClienteUSD(nombre){
@@ -1645,8 +1709,8 @@ function filtrarClientesCombo(){
   const input = document.getElementById('vCliente');
   const lista = document.getElementById('vClienteLista');
   if(!input || !lista) return;
-  const q = input.value.trim().toLowerCase();
-  const matches = q ? state.clientes.filter(c=>c.nombre.toLowerCase().includes(q)) : state.clientes;
+  const q = normalizarNombre(input.value);
+  const matches = q ? state.clientes.filter(c=>normalizarNombre(c.nombre).includes(q)) : state.clientes;
   lista.innerHTML = matches.length ? matches.slice(0,30).map(c=>{
     const deuda = deudaClienteUSD(c.nombre);
     return `<div class="autocomplete-item" onmousedown="seleccionarClienteCombo('${c.id}')">${c.nombre} ${deuda>0?`<span style="color:var(--rojo-txt);float:right;">debe ${fmtUSD(deuda)}</span>`:''}</div>`;
@@ -2100,28 +2164,35 @@ loadState();
       // quien agregue cosas DISTINTAS, y eso sí queda perfectamente combinado).
       // "eliminadosIds" son los ids que se borraron a propósito: se excluyen aunque el otro
       // dispositivo todavía los tenga, para que un borrado no "resucite" al sincronizar.
-      function fusionarListasPorId(remota, local, eliminadosIds){
+      function fusionarListasPorId(remota, local, eliminadosIds, gananRemotos){
         remota = Array.isArray(remota) ? remota : [];
         local = Array.isArray(local) ? local : [];
         const idsBorrados = new Set(eliminadosIds||[]);
         const mapa = {};
-        remota.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
-        local.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
+        // Si "gananRemotos" es true (al RECIBIR de la nube), ante el mismo id manda lo de la nube
+        // (es la edición más reciente de otro dispositivo) y lo que solo existe aquí se conserva.
+        // Si es false (al SUBIR), ante el mismo id manda lo de este dispositivo.
+        var primeros = gananRemotos ? local : remota;
+        var ultimos = gananRemotos ? remota : local;
+        primeros.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
+        ultimos.forEach(function(it){ if(it && it.id!=null) mapa[it.id] = it; });
         idsBorrados.forEach(function(id){ delete mapa[id]; });
         return Object.values(mapa);
       }
-      function fusionarEstadoParaNube(remoto, local){
+      function fusionarEstadoParaNube(remoto, local, gananRemotos){
         remoto = remoto || {};
         const eliminadosRemoto = remoto.eliminados || {};
         const eliminadosLocal = local.eliminados || {};
-        const resultado = Object.assign({}, sinCamposLocales(remoto), sinCamposLocales(local));
+        const resultado = gananRemotos
+          ? Object.assign({}, sinCamposLocales(local), sinCamposLocales(remoto))
+          : Object.assign({}, sinCamposLocales(remoto), sinCamposLocales(local));
         resultado.eliminados = { facturas: [], clientes: [], catalogo: [], egresos: [] };
         ['facturas','clientes','catalogo','egresos'].forEach(function(campo){
           // Las listas de borrados de ambos dispositivos se combinan, para que un borrado
           // hecho en cualquiera de los dos se respete siempre (y no solo la última vez).
           var idsBorrados = Array.from(new Set([].concat(eliminadosRemoto[campo]||[], eliminadosLocal[campo]||[])));
           resultado.eliminados[campo] = idsBorrados.slice(-1000);
-          resultado[campo] = fusionarListasPorId(remoto[campo], local[campo], idsBorrados);
+          resultado[campo] = fusionarListasPorId(remoto[campo], local[campo], idsBorrados, gananRemotos);
         });
         // El número de factura nunca debe retroceder, para no repetir numeración entre dispositivos.
         resultado.contadorFactura = Math.max(remoto.contadorFactura||1, local.contadorFactura||1);
@@ -2131,15 +2202,38 @@ loadState();
       // Sincronización en tiempo real desde Firebase
       docRef.onSnapshot(function(snapshot) {
         if (window.setEstadoNube) window.setEstadoNube('conectado');
-        if (snapshot.exists) {
-          var data = snapshot.data();
-          if (typeof state !== 'undefined' && typeof seedState === 'function') {
+        if (typeof state !== 'undefined' && typeof seedState === 'function') {
+          var remotoData = snapshot.exists ? snapshot.data() : {};
+          // Copia de seguridad de lo que había en ESTE dispositivo, antes de juntarlo con la nube
+          // (solo la primera vez que se conecta). Queda guardada en el navegador por si acaso.
+          if (!window.__copiaPreviaHecha) {
+            window.__copiaPreviaHecha = true;
+            try {
+              var previo = localStorage.getItem("sistema-facturacion-deudores-v1");
+              if (previo && !localStorage.getItem("sistema-facturacion-copia-previa")) {
+                localStorage.setItem("sistema-facturacion-copia-previa", previo);
+              }
+            } catch(e) {}
+          }
+          // NUNCA se reemplaza lo local por lo de la nube: se JUNTAN. Así, lo que solo existía
+          // en este dispositivo no se pierde, y se sube a la nube para los demás.
+          var data = fusionarEstadoParaNube(remotoData, state, true);
+          var hayCosasSoloLocales = false;
+          ['facturas','clientes','catalogo','egresos'].forEach(function(campo){
+            var idsRemotos = new Set((remotoData[campo]||[]).map(function(x){ return x && x.id; }));
+            (data[campo]||[]).forEach(function(x){ if (x && !idsRemotos.has(x.id)) hayCosasSoloLocales = true; });
+          });
+          if ((data.contadorFactura||1) > (remotoData.contadorFactura||1)) hayCosasSoloLocales = true;
+          if (!snapshot.exists) hayCosasSoloLocales = true;
+          {
             var overlayEl = document.getElementById('overlay');
             var modalEstabaAbierto = overlayEl && overlayEl.classList.contains('show');
             // Se conservan los datos propios de esta PC (respaldos, pantalla y filtros).
             var propios = {};
             CAMPOS_SOLO_LOCAL.forEach(function(c){ if (state && state[c] !== undefined) propios[c] = state[c]; });
             state = Object.assign(seedState(), data, propios);
+            var huboUnificacion = (typeof unificarClientesDuplicados === 'function') ? unificarClientesDuplicados() : false;
+            if ((hayCosasSoloLocales || huboUnificacion) && window.guardarEnNube) window.guardarEnNube(state);
             try { localStorage.setItem("sistema-facturacion-deudores-v1", JSON.stringify(state)); } catch(e) {}
             // Revalida el contador de facturas por si llegaron datos más nuevos de otro dispositivo.
             if (typeof asegurarContadorFactura === 'function') asegurarContadorFactura();
